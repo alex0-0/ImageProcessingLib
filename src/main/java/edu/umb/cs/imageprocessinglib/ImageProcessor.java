@@ -28,7 +28,6 @@ import edu.umb.cs.imageprocessinglib.model.Recognition;
 import edu.umb.cs.imageprocessinglib.tensorflow.Classifier;
 import edu.umb.cs.imageprocessinglib.tensorflow.TensorFlowYoloDetector;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
-import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
