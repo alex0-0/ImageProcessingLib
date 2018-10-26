@@ -1,4 +1,4 @@
-package edu.umb.cs.imageprocessinglib.imagefeature;
+package edu.umb.cs.imageprocessinglib.feature;
 
 import org.opencv.core.DMatch;
 import org.opencv.core.KeyPoint;

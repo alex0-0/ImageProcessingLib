@@ -1,4 +1,4 @@
-package edu.umb.cs.imageprocessinglib.imagefeature;
+package edu.umb.cs.imageprocessinglib.feature;
 
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.DMatch;
@@ -49,6 +49,10 @@ public class FeatureMatcher {
      * @return                      matched key points
      */
     public MatOfDMatch matchFeature(Mat queryDescriptor, Mat templateDescriptor, MatOfKeyPoint keypoints1, MatOfKeyPoint keypoints2) {
+//        MatOfDMatch matches = new MatOfDMatch();
+//        BFMatcher.match(queryDescriptor, templateDescriptor, matches);       //k(final parameter) set to 1 will do crosscheck
+//        return matches;
+
         ArrayList<MatOfDMatch> matches1 = new ArrayList<>();
         ArrayList<MatOfDMatch>  matches2 = new ArrayList<>();
 

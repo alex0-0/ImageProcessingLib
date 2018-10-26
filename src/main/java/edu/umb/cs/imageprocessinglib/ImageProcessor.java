@@ -21,9 +21,9 @@ package edu.umb.cs.imageprocessinglib;
 //import org.opencv.core.MatOfKeyPoint;
 //
 
-import edu.umb.cs.imageprocessinglib.imagefeature.FeatureDetector;
-import edu.umb.cs.imageprocessinglib.imagefeature.FeatureMatcher;
-import edu.umb.cs.imageprocessinglib.model.ImageFeatureObject;
+import edu.umb.cs.imageprocessinglib.feature.FeatureDetector;
+import edu.umb.cs.imageprocessinglib.feature.FeatureMatcher;
+import edu.umb.cs.imageprocessinglib.model.ImageFeature;
 import edu.umb.cs.imageprocessinglib.model.Recognition;
 import edu.umb.cs.imageprocessinglib.tensorflow.Classifier;
 import edu.umb.cs.imageprocessinglib.tensorflow.TensorFlowYoloDetector;
@@ -59,7 +59,9 @@ public class ImageProcessor {
         List<Recognition> recognitions = detector.recognizeImage(image);
 
         String fileName = imagePath.substring(imagePath.lastIndexOf("/") + 1, imagePath.length());
-        ImageUtil.getInstance().labelAndSaveImage(image, recognitions, fileName, YOLO_INPUT_SIZE);
+        ImageUtil.labelAndSaveImage(image, recognitions, fileName, YOLO_INPUT_SIZE);
+        ImageUtil.displayImage(ImageUtil.createImageFromBytes(image));
+//        ImageUtil.
 
         //filter out low confidence recognition
         recognitions.removeIf(r -> r.getConfidence() < minConfidence);
@@ -202,24 +204,24 @@ public class ImageProcessor {
     /*
     Extract image feature points
      */
-    static public ImageFeatureObject extractDistinctFeatures(Mat img) {
+    static public ImageFeature extractDistinctFeatures(Mat img) {
         MatOfKeyPoint kps = new MatOfKeyPoint();
         Mat des = new Mat();
         FeatureDetector.getInstance().extractDistinctFeatures(img, kps, des);
-        return new ImageFeatureObject(kps, des);
+        return new ImageFeature(kps, des);
     }
 
     /*
     Extract image feature points
      */
-    static public ImageFeatureObject extractFeatures(Mat img) {
+    static public ImageFeature extractFeatures(Mat img) {
         MatOfKeyPoint kps = new MatOfKeyPoint();
         Mat des = new Mat();
         FeatureDetector.getInstance().extractFeatures(img, kps, des);
-        return new ImageFeatureObject(kps, des);
+        return new ImageFeature(kps, des);
     }
 
-//    static public ImageFeatureObject extractFeatures(Bitmap bitmap) {
+//    static public ImageFeature extractFeatures(Bitmap bitmap) {
 //        Mat img = new Mat();
 //        Utils.bitmapToMat(bitmap, img);
 //        return extractFeatures(img);
@@ -228,20 +230,20 @@ public class ImageProcessor {
     /*
     Match two images
      */
-    static public MatOfDMatch matcheImages(ImageFeatureObject qIF, ImageFeatureObject tIF) {
+    static public MatOfDMatch matcheImages(ImageFeature qIF, ImageFeature tIF) {
         return FeatureMatcher.getInstance().matchFeature(qIF.getDescriptors(), tIF.getDescriptors(), qIF.getObjectKeypoints(), tIF.getObjectKeypoints());
     }
 
     static public MatOfDMatch matcheImages(Mat queryImg, Mat temImg) {
         MatOfKeyPoint kps = new MatOfKeyPoint();
-        ImageFeatureObject qIF = extractFeatures(queryImg);
-        ImageFeatureObject tIF = extractFeatures(temImg);
+        ImageFeature qIF = extractFeatures(queryImg);
+        ImageFeature tIF = extractFeatures(temImg);
         return matcheImages(qIF, tIF);
     }
 
 //    static public MatOfDMatch matcheImages(Bitmap queryImg, Bitmap temImg) {
-//        imagefeature qIF = extractFeatures(queryImg);
-//        imagefeature tIF = extractFeatures(temImg);
+//        feature qIF = extractFeatures(queryImg);
+//        feature tIF = extractFeatures(temImg);
 //        return matcheImages(qIF, tIF);
 //    }
 }

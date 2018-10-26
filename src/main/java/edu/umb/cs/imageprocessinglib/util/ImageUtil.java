@@ -4,10 +4,13 @@ package edu.umb.cs.imageprocessinglib.util;
 import edu.umb.cs.imageprocessinglib.model.BoxPosition;
 import edu.umb.cs.imageprocessinglib.model.Recognition;
 import org.apache.commons.io.IOUtils;
+import org.opencv.core.Mat;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -18,8 +21,8 @@ import java.util.List;
  */
 public class ImageUtil {
     private static ImageUtil imageUtil;
-    // Output directory
-    String OUTPUT_DIR = "./sample";
+    // Default output directory
+    static String OUTPUT_DIR = "./sample";
 
     private ImageUtil() {
         File dir = new File(OUTPUT_DIR);
@@ -45,7 +48,16 @@ public class ImageUtil {
      * @param image buffered image to label
      * @param recognitions list of recognized objects
      */
-    public void labelAndSaveImage(final byte[] image, final List<Recognition> recognitions, final String fileName, float modelInSize) {
+    public static void labelAndSaveImage(final byte[] image, final List<Recognition> recognitions, final String fileName, float modelInSize) {
+        labelAndSaveImage(image, recognitions, fileName, modelInSize, OUTPUT_DIR);
+    }
+
+    /**
+     * Label image with classes and predictions given by the ThensorFLow
+     * @param image buffered image to label
+     * @param recognitions list of recognized objects
+     */
+    public static void labelAndSaveImage(final byte[] image, final List<Recognition> recognitions, final String fileName, float modelInSize, final String dirPath) {
         BufferedImage bufferedImage = imageUtil.createImageFromBytes(image);
         float scaleX = (float) bufferedImage.getWidth() / modelInSize;
         float scaleY = (float) bufferedImage.getHeight() / modelInSize;
@@ -60,10 +72,15 @@ public class ImageUtil {
         }
 
         graphics.dispose();
-        saveImage(bufferedImage, OUTPUT_DIR + "/" + fileName);
+
+        File dir = new File(dirPath);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        saveImage(bufferedImage, dirPath + "/" + fileName);
     }
 
-    public void saveImage(final BufferedImage image, final String target) {
+    public static void saveImage(final BufferedImage image, final String target) {
         try {
             ImageIO.write(image,"jpg", new File(target));
         } catch (IOException e) {
@@ -71,7 +88,7 @@ public class ImageUtil {
         }
     }
 
-    private BufferedImage createImageFromBytes(final byte[] imageData) {
+    public static BufferedImage createImageFromBytes(final byte[] imageData) {
         ByteArrayInputStream bais = new ByteArrayInputStream(imageData);
         try {
             return ImageIO.read(bais);
@@ -87,5 +104,32 @@ public class ImageUtil {
             ex.printStackTrace();
             throw new RuntimeException();
         }
+    }
+
+    public static BufferedImage Mat2BufferedImage(Mat m) {
+        int type = BufferedImage.TYPE_BYTE_GRAY;
+        if ( m.channels() > 1 ) {
+            type = BufferedImage.TYPE_3BYTE_BGR;
+        }
+        int bufferSize = m.channels()*m.cols()*m.rows();
+        byte [] b = new byte[bufferSize];
+        m.get(0,0,b); // get all the pixels
+        BufferedImage image = new BufferedImage(m.cols(),m.rows(), type);
+        final byte[] targetPixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
+        System.arraycopy(b, 0, targetPixels, 0, b.length);
+        return image;
+    }
+
+    //display image
+    public static void displayImage(Image img) {
+        ImageIcon icon=new ImageIcon(img);
+        JFrame frame=new JFrame();
+        frame.setLayout(new FlowLayout());
+        frame.setSize(img.getWidth(null)+50, img.getHeight(null)+50);
+        JLabel lbl=new JLabel();
+        lbl.setIcon(icon);
+        frame.add(lbl);
+        frame.setVisible(true);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 }
