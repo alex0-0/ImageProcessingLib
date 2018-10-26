@@ -49,12 +49,14 @@ public class Main {
         FeatureStorage storage = new FeatureStorage();
         storage.open("des.xml", FeatureStorage.FeatureStorageFlag.WRITE);
         storage.writeMat("des", imageFeature.getDescriptors());
-//        storage.writeMat("kp", imageFeature.getObjectKeypoints());
+        storage.writeKeyPoints("keypoint", imageFeature.getObjectKeypoints());
         storage.release();
 
+//        System.out.printf("Keypoint number: %d", imageFeature.getObjectKeypoints().rows());
         storage.open("des.xml");
         Mat des = storage.readMat("des");
-        MatOfDMatch matches = ImageProcessor.matcheImages(imageFeature, new ImageFeature(imageFeature.getObjectKeypoints(), des));
+        MatOfKeyPoint kps = storage.readKeyPoints("keypoint");
+        MatOfDMatch matches = ImageProcessor.matcheImages(imageFeature, new ImageFeature(kps, des));
         System.out.printf("Precision: %f", (float)matches.total()/ imageFeature.getDescriptors().rows());
 
 

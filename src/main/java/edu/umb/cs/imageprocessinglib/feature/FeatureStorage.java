@@ -1,6 +1,8 @@
 package edu.umb.cs.imageprocessinglib.feature;
 import org.opencv.core.CvType;
+import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfKeyPoint;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -18,6 +20,11 @@ import java.util.Scanner;
 
 
 public class FeatureStorage {
+    static final String TYPE_ID = "type_id";
+    static final String MAT_TYPE_ID = "opencv-matrix";
+    static final String KEYPOINTS_TYPE_ID = "opencv-keypoints";
+    static final String KP_TAG = "kp";  //Tag for every KeyPoint in MatOfKeyPoint
+
     public enum FeatureStorageFlag {
         READ, WRITE;
     }
@@ -73,6 +80,7 @@ public class FeatureStorage {
     public void create(String filePath) {
         try {
             file = new File(filePath);
+            //if file exists, overwrite it
             file.createNewFile();
             if( file == null ) {
                 System.err.println("Can not wrtie file: " + filePath );
@@ -87,6 +95,110 @@ public class FeatureStorage {
         } catch(Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public MatOfKeyPoint readKeyPoints(String tag) {
+        if( isWrite ) {
+            System.err.println("Try read from file with write flags");
+            return null;
+        }
+
+        NodeList nodelist = doc.getElementsByTagName(tag);
+        MatOfKeyPoint readKPs = new MatOfKeyPoint();
+
+        for( int i = 0 ; i<nodelist.getLength() ; i++ ) {
+            Node node = nodelist.item(i);
+
+            if( node.getNodeType() == Node.ELEMENT_NODE ) {
+                Element element = (Element)node;
+
+                String type_id = element.getAttribute(TYPE_ID);
+                if( KEYPOINTS_TYPE_ID.equals(type_id) == false) {
+                    System.out.println("Fault type_id ");
+                }
+
+                //retrieve KeyPoint
+                NodeList kpNodes = element.getElementsByTagName(KP_TAG);
+                KeyPoint[] kpArray = new KeyPoint[kpNodes.getLength()];
+
+                for (int d = 0; d < kpNodes.getLength(); d++) {
+                    Element kp = (Element)kpNodes.item(d);
+
+                    String classId = kp.getElementsByTagName("class_id").item(0).getTextContent();
+                    String x = kp.getElementsByTagName("x").item(0).getTextContent();
+                    String y = kp.getElementsByTagName("y").item(0).getTextContent();
+                    String size = kp.getElementsByTagName("size").item(0).getTextContent();
+                    String angle = kp.getElementsByTagName("angle").item(0).getTextContent();
+                    String octave = kp.getElementsByTagName("octave").item(0).getTextContent();
+                    String response = kp.getElementsByTagName("response").item(0).getTextContent();
+
+                    KeyPoint keyPoint = new KeyPoint(
+                            Float.parseFloat(x),
+                            Float.parseFloat(y),
+                            Float.parseFloat(size),
+                            Float.parseFloat(angle),
+                            Float.parseFloat(response),
+                            Integer.parseInt(octave),
+                            Integer.parseInt(classId));
+                    kpArray[d] = keyPoint;
+                }
+                readKPs.fromArray(kpArray);
+            }
+        }
+        return readKPs;
+    }
+
+    public void writeKeyPoints(String tag, MatOfKeyPoint keyPoints) {
+        try {
+            if( isWrite == false) {
+                System.err.println("Try write to file with no write flags");
+                return;
+            }
+
+            Element kpsRoot = doc.createElement(tag);
+            kpsRoot.setAttribute(TYPE_ID, KEYPOINTS_TYPE_ID);
+            rootElement.appendChild(kpsRoot);
+            KeyPoint[] kps = keyPoints.toArray();
+
+            //parse every KeyPoint
+            for (KeyPoint kp : kps) {
+                Element k = doc.createElement(KP_TAG);
+
+                Element classId = doc.createElement("class_id");
+                classId.appendChild( doc.createTextNode( String.valueOf(kp.class_id) ));
+
+                Element x = doc.createElement("x");
+                x.appendChild( doc.createTextNode( String.valueOf(kp.pt.x) ));
+
+                Element y = doc.createElement("y");
+                y.appendChild( doc.createTextNode( String.valueOf(kp.pt.y) ));
+
+                Element size = doc.createElement("size");
+                size.appendChild( doc.createTextNode( String.valueOf(kp.size) ));
+
+                Element angle = doc.createElement("angle");
+                angle.appendChild( doc.createTextNode( String.valueOf(kp.angle) ));
+
+                Element octave = doc.createElement("octave");
+                octave.appendChild( doc.createTextNode( String.valueOf(kp.octave) ));
+
+                Element response = doc.createElement("response");
+                response.appendChild( doc.createTextNode( String.valueOf(kp.response) ));
+
+                k.appendChild(classId);
+                k.appendChild(x);
+                k.appendChild(y);
+                k.appendChild(size);
+                k.appendChild(angle);
+                k.appendChild(octave);
+                k.appendChild(response);
+
+                kpsRoot.appendChild(k);
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     public Mat readMat(String tag) {
@@ -104,8 +216,8 @@ public class FeatureStorage {
             if( node.getNodeType() == Node.ELEMENT_NODE ) {
                 Element element = (Element)node;
 
-                String type_id = element.getAttribute("type_id");
-                if( "opencv-matrix".equals(type_id) == false) {
+                String type_id = element.getAttribute(TYPE_ID);
+                if( MAT_TYPE_ID.equals(type_id) == false) {
                     System.out.println("Fault type_id ");
                 }
 
@@ -193,7 +305,6 @@ public class FeatureStorage {
         return readMat;
     }
 
-
     public void writeMat(String tag, Mat mat) {
         try {
             if( isWrite == false) {
@@ -202,7 +313,7 @@ public class FeatureStorage {
             }
 
             Element matrix = doc.createElement(tag);
-            matrix.setAttribute("type_id", "opencv-matrix");
+            matrix.setAttribute(TYPE_ID, MAT_TYPE_ID);
             rootElement.appendChild(matrix);
 
             Element rows = doc.createElement("rows");
