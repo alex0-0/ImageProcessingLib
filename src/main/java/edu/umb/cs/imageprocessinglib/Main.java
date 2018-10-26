@@ -34,8 +34,7 @@ public class Main {
         Mat mat = Mat.eye(3, 3, CvType.CV_8UC1);
         System.out.println("mat = " + mat.dump());
         //Reading the Image from the file
-        System.out.println("Working Directory = " +
-                System.getProperty("user.dir"));
+        System.out.println("Working Directory = " + System.getProperty("user.dir"));
         Imgcodecs imageCodecs = new Imgcodecs();
 //        String file ="/Users/alexli/IdeaProjects/ImageProcessingLib/src/main/resources/image/eagle.jpg";
         String file ="src/main/resources/image/eagle.jpg";
@@ -52,13 +51,18 @@ public class Main {
         storage.writeKeyPoints("keypoint", imageFeature.getObjectKeypoints());
         storage.release();
 
-//        System.out.printf("Keypoint number: %d", imageFeature.getObjectKeypoints().rows());
+        //test if the KPs retrieved from xml file is identical to original KPs
         storage.open("des.xml");
         Mat des = storage.readMat("des");
         MatOfKeyPoint kps = storage.readKeyPoints("keypoint");
         MatOfDMatch matches = ImageProcessor.matcheImages(imageFeature, new ImageFeature(kps, des));
         System.out.printf("Precision: %f", (float)matches.total()/ imageFeature.getDescriptors().rows());
 
-
+        MatOfDMatch m = new MatOfDMatch();
+        m.fromList(matches.toList().subList(0,50));
+        //display matches
+        Mat display = new Mat();
+        Features2d.drawMatches(img, kps, img, kps, m, display);
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
     }
 }
