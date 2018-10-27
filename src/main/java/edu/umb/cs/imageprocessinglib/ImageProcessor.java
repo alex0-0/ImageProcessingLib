@@ -31,6 +31,7 @@ import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
+import org.opencv.imgcodecs.Imgcodecs;
 
 import java.io.IOException;
 import java.util.List;
@@ -44,6 +45,7 @@ public class ImageProcessor {
 
     private Classifier detector;
     private float minConfidence = 0.5f;
+
 
     public void initObjectDetector() {
         detector = TensorFlowYoloDetector.create(
@@ -246,5 +248,10 @@ public class ImageProcessor {
 //        feature tIF = extractFeatures(temImg);
 //        return matcheImages(qIF, tIF);
 //    }
+
+    static public Mat loadImage(String file){
+        Imgcodecs imageCodecs = new Imgcodecs();
+        return imageCodecs.imread(file);
+    }
 }
 

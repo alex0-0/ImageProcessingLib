@@ -1,8 +1,7 @@
 package edu.umb.cs.imageprocessinglib.feature;
-import org.opencv.core.CvType;
-import org.opencv.core.KeyPoint;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfKeyPoint;
+import edu.umb.cs.imageprocessinglib.ImageProcessor;
+import edu.umb.cs.imageprocessinglib.model.ImageFeature;
+import org.opencv.core.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -435,5 +434,20 @@ public class FeatureStorage {
         } catch(Exception e) {
             e.printStackTrace();
         }
+    }
+
+
+    public void saveFPtoFile(String file, ImageFeature imageFeature ){
+        open(file, FeatureStorage.FeatureStorageFlag.WRITE);
+        writeMat("des", imageFeature.getDescriptors());
+        writeKeyPoints("keypoint", imageFeature.getObjectKeypoints());
+        release();
+    }
+
+    public ImageFeature loadFPfromFile(String file){
+        open("des.xml");
+        Mat des = readMat("des");
+        MatOfKeyPoint kps = readKeyPoints("keypoint");
+        return new ImageFeature(kps, des);
     }
 }

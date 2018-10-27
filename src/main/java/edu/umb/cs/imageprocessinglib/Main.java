@@ -35,10 +35,10 @@ public class Main {
         System.out.println("mat = " + mat.dump());
         //Reading the Image from the file
         System.out.println("Working Directory = " + System.getProperty("user.dir"));
-        Imgcodecs imageCodecs = new Imgcodecs();
+        //Imgcodecs imageCodecs = new Imgcodecs();
 //        String file ="/Users/alexli/IdeaProjects/ImageProcessingLib/src/main/resources/image/eagle.jpg";
         String file ="src/main/resources/image/eagle.jpg";
-        Mat img = imageCodecs.imread(file);
+        Mat img = ImageProcessor.loadImage(file); //imageCodecs.imread(file);
 //        ImageFeature imageFeature = ImageProcessor.extractDistinctFeatures(img);
         ImageFeature imageFeature = ImageProcessor.extractFeatures(img);
 
@@ -46,16 +46,28 @@ public class Main {
 //        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(img));
 
         FeatureStorage storage = new FeatureStorage();
+
+        storage.saveFPtoFile("des.xml", imageFeature);
+/*
         storage.open("des.xml", FeatureStorage.FeatureStorageFlag.WRITE);
         storage.writeMat("des", imageFeature.getDescriptors());
         storage.writeKeyPoints("keypoint", imageFeature.getObjectKeypoints());
         storage.release();
-
+*/
         //test if the KPs retrieved from xml file is identical to original KPs
+
+        ImageFeature imageFeature1=storage.loadFPfromFile("des.xml");
+
+        /*
         storage.open("des.xml");
         Mat des = storage.readMat("des");
         MatOfKeyPoint kps = storage.readKeyPoints("keypoint");
-        MatOfDMatch matches = ImageProcessor.matcheImages(imageFeature, new ImageFeature(kps, des));
+        */
+
+        Mat des=imageFeature1.getDescriptors();
+        MatOfKeyPoint kps=imageFeature1.getObjectKeypoints();
+        //MatOfDMatch matches = ImageProcessor.matcheImages(imageFeature, new ImageFeature(kps, des));
+        MatOfDMatch matches = ImageProcessor.matcheImages(imageFeature, imageFeature1);
         System.out.printf("Precision: %f", (float)matches.total()/ imageFeature.getDescriptors().rows());
 
         MatOfDMatch m = new MatOfDMatch();
