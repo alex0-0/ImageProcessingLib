@@ -229,7 +229,7 @@ public class ImageProcessor {
     static public ImageFeature extractFeatures(Mat img) {
         MatOfKeyPoint kps = new MatOfKeyPoint();
         Mat des = new Mat();
-        FeatureDetector.getInstance().extractFeatures(img, kps, des);
+        FeatureDetector.getInstance().extractORBFeatures(img, kps, des);
         return new ImageFeature(kps, des);
     }
 
@@ -244,6 +244,7 @@ public class ImageProcessor {
      */
     static public MatOfDMatch matcheImages(ImageFeature qIF, ImageFeature tIF) {
         return FeatureMatcher.getInstance().matchFeature(qIF.getDescriptors(), tIF.getDescriptors(), qIF.getObjectKeypoints(), tIF.getObjectKeypoints());
+//        return FeatureMatcher.getInstance().BFMatchFeature(qIF.getDescriptors(), tIF.getDescriptors());
     }
 
     static public MatOfDMatch matcheImages(Mat queryImg, Mat temImg) {

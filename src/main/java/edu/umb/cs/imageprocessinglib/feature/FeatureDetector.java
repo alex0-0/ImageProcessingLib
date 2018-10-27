@@ -9,6 +9,7 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Size;
 import org.opencv.features2d.FastFeatureDetector;
+import org.opencv.features2d.ORB;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.utils.Converters;
 import org.opencv.xfeatures2d.SURF;
@@ -25,7 +26,8 @@ public class FeatureDetector {
     private static final int        kMaxFeatures = 200;
 
     private FastFeatureDetector     FAST;
-    private SURF                    surf;
+    private SURF surf;
+    private ORB orb;
 
     private static final FeatureDetector ourInstance = new FeatureDetector();
 
@@ -37,10 +39,20 @@ public class FeatureDetector {
         FAST = FastFeatureDetector.create();
         surf = SURF.create();
         surf.setHessianThreshold(400);
+        orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
     }
 
-    public boolean extractFeatures(Mat gray, MatOfKeyPoint keyPoints, Mat descriptors) {
-//        FAST.detect(gray, keyPoints);
+    public void extractORBFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
+        orb.detectAndCompute(img, new Mat(), keyPoints, descriptors);
+
+    }
+
+    public void extractSurfFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
+        surf.detectAndCompute(img, new Mat(), keyPoints, descriptors);
+
+    }
+    public void extractFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
+//        FAST.detect(img, keyPoints);
 //        //too many features cause poor performance on mobile
 //        if (keyPoints.total() > kMaxFeatures) {
 //            List<KeyPoint> listOfKeyPoints = keyPoints.toList();
@@ -52,10 +64,9 @@ public class FeatureDetector {
 //            });
 //            keyPoints.fromList(listOfKeyPoints.subList(0, kMaxFeatures));
 //        }
-        surf.detectAndCompute(gray, new Mat(), keyPoints, descriptors);
-//        surf.compute(gray, keyPoints, descriptors);
-
-        return true;
+//        surf.detectAndCompute(img, new Mat(), keyPoints, descriptors);
+//        surf.compute(img, keyPoints, descriptors);
+        extractORBFeatures(img, keyPoints, descriptors);
     }
 
     private static int kDistinctThreshold    =   3;      //threshold deciding whether a feature point is robust to distortion
