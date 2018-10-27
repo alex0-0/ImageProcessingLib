@@ -8,6 +8,7 @@ import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
+import org.opencv.features2d.BFMatcher;
 import org.opencv.features2d.DescriptorMatcher;
 
 import java.util.ArrayList;
@@ -22,42 +23,98 @@ import java.util.List;
  */
 
 public class FeatureMatcher {
+
+    public enum DescriptorType {
+        ORB,
+        SURF
+    }
+
 //    static private final double kConfidence = 0.99;
 //    static private final double kDistance = 3.0;
     static private final double kRatio = 0.7;
     static double kTolerableDifference = 0.1;  //an custom number to determine whether two matches have spacial relation
     static String TAG = "Feature Matcher";
 
-    private DescriptorMatcher BFMatcher;
+    private DescriptorMatcher matcher;
+    private DescriptorType descriptorType;
 
-    private static final FeatureMatcher ourInstance = new FeatureMatcher();
+    private static final FeatureMatcher ourInstance = new FeatureMatcher(DescriptorType.ORB);
 
     public static FeatureMatcher getInstance() {
         return ourInstance;
     }
 
-    private FeatureMatcher() {
-        BFMatcher = DescriptorMatcher.create("BruteForce");
+    public FeatureMatcher(DescriptorType type) {
+        descriptorType = type;
+        matcher = createMatcher(type);
+    }
+
+    //Default matcher is ORB
+    private BFMatcher createMatcher(DescriptorType type) {
+        BFMatcher m;
+        switch (type) {
+            case SURF:
+                m = BFMatcher.create(DescriptorMatcher.BRUTEFORCE_SL2, false);
+                break;
+            case ORB:
+            default:
+                m = BFMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING, false);
+                break;
+        }
+        return m;
+    }
+
+    public MatOfDMatch BFMatchFeature(Mat queryDescriptor, Mat templateDescriptor) {
+        return BFMatchFeature(queryDescriptor, templateDescriptor, descriptorType);
     }
 
     /**
      *
      * @param queryDescriptor
      * @param templateDescriptor
-     * @param keypoints1            query key points
-     * @param keypoints2            template key points
+     * @param dType                 Descriptor type
      * @return                      matched key points
      */
-    public MatOfDMatch matchFeature(Mat queryDescriptor, Mat templateDescriptor, MatOfKeyPoint keypoints1, MatOfKeyPoint keypoints2) {
+    public MatOfDMatch BFMatchFeature(Mat queryDescriptor, Mat templateDescriptor, DescriptorType dType) {
+        if (dType != descriptorType) {
+            matcher = createMatcher(dType);
+            descriptorType = dType;
+        }
+        MatOfDMatch matches = new MatOfDMatch();
+        matcher.match(queryDescriptor, templateDescriptor, matches);
+        return matches;
+    }
+
+    public MatOfDMatch matchFeature(Mat queryDescriptor, Mat templateDescriptor, MatOfKeyPoint queryKeyPoints, MatOfKeyPoint templateKeyPoints) {
+        return matchFeature(queryDescriptor, templateDescriptor, queryKeyPoints, templateKeyPoints, DescriptorType.ORB);
+    }
+    /**
+     *
+     * @param queryDescriptor
+     * @param templateDescriptor
+     * @param queryKeyPoints            query key points
+     * @param templateKeyPoints            template key points
+     * @return                      matched key points
+     */
+    public MatOfDMatch matchFeature(Mat queryDescriptor,
+                                    Mat templateDescriptor,
+                                    MatOfKeyPoint queryKeyPoints,
+                                    MatOfKeyPoint templateKeyPoints,
+                                    DescriptorType dType) {
 //        MatOfDMatch matches = new MatOfDMatch();
-//        BFMatcher.match(queryDescriptor, templateDescriptor, matches);       //k(final parameter) set to 1 will do crosscheck
+//        matcher.match(queryDescriptor, templateDescriptor, matches);       //k(final parameter) set to 1 will do crosscheck
 //        return matches;
+
+        if (dType != descriptorType) {
+            matcher = createMatcher(dType);
+            descriptorType = dType;
+        }
 
         ArrayList<MatOfDMatch> matches1 = new ArrayList<>();
         ArrayList<MatOfDMatch>  matches2 = new ArrayList<>();
 
-        BFMatcher.knnMatch(queryDescriptor, templateDescriptor, matches1, 2);       //k(final parameter) set to 1 will do crosscheck
-        BFMatcher.knnMatch(templateDescriptor, queryDescriptor, matches2, 2);
+        matcher.knnMatch(queryDescriptor, templateDescriptor, matches1, 2);       //k(final parameter) set to 1 will do crosscheck
+        matcher.knnMatch(templateDescriptor, queryDescriptor, matches2, 2);
 
         ratioTest(matches1);
         ratioTest(matches2);
@@ -74,7 +131,7 @@ public class FeatureMatcher {
         }
 
         if (symMatches.total() > 20) {
-            ransacTest(symMatches, keypoints1, keypoints2, ransacMatches);
+            ransacTest(symMatches, queryKeyPoints, templateKeyPoints, ransacMatches);
             //release resources
             symMatches.release();
             return ransacMatches;
