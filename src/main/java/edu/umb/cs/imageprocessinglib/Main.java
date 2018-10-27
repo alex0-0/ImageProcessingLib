@@ -6,7 +6,6 @@ import edu.umb.cs.imageprocessinglib.model.Recognition;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import org.opencv.core.*;
 import org.opencv.features2d.Features2d;
-import org.opencv.imgcodecs.Imgcodecs;
 
 import java.io.IOException;
 import java.util.List;
@@ -21,7 +20,7 @@ public class Main {
     private static void testTensorFlow() throws IOException {
 //      String IMAGE = "/image/cow-and-bird.jpg";
         //String IMAGE = "/image/eagle.jpg";
-        String IMAGE = "/image/bikes.jpg";
+        String IMAGE = "/image/cars.jpg";
         ImageProcessor imageProcessor = new ImageProcessor();
         imageProcessor.initObjectDetector();
         List<Recognition> recognitions = imageProcessor.recognizeImage(IMAGE);

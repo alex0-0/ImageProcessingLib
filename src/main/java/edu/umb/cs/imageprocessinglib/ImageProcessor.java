@@ -59,7 +59,8 @@ public class ImageProcessor {
 
     public List<Recognition> recognizeImage(String imagePath) throws IOException {
         byte[] image = ImageUtil.extractBytes(imagePath, ImageProcessor.class);
-        List<Recognition> recognitions = detector.recognizeImage(image);
+
+        List<Recognition> recognitions=recognizeImage(image);
 
         System.out.println(recognitions.size());
         BufferedImage bimg=ImageUtil.createImageFromBytes(image);
@@ -73,6 +74,18 @@ public class ImageProcessor {
         //filter out low confidence recognition
         //recognitions.removeIf(r -> r.getConfidence() < minConfidence);
 
+/*
+        for (Recognition recognition : recognitions) {
+            recognition.loadPiexels(bimg, YOLO_INPUT_SIZE);
+        }
+*/
+        return recognitions;
+    }
+
+    public List<Recognition> recognizeImage(byte[] image) throws IOException {
+
+        List<Recognition> recognitions = detector.recognizeImage(image);
+        BufferedImage bimg=ImageUtil.createImageFromBytes(image);
 
         for (Recognition recognition : recognitions) {
             recognition.loadPiexels(bimg, YOLO_INPUT_SIZE);
