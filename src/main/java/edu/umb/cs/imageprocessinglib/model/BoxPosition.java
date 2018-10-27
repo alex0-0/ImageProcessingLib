@@ -101,10 +101,10 @@ public class BoxPosition {
     @Override
     public String toString() {
         return "BoxPosition{" +
-                "left=" + left +
-                ", top=" + top +
-                ", width=" + width +
-                ", height=" + height +
+                "left=" + getLeftInt() +
+                ", top=" + getTopInt() +
+                ", width=" + getWidthInt() +
+                ", height=" + getHeightInt() +
                 '}';
     }
 }

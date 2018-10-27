@@ -14,18 +14,21 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) throws IOException {
-        testOpenCV();
-//        testTensorFlow();
+ //       testOpenCV();
+        testTensorFlow();
     }
 
     private static void testTensorFlow() throws IOException {
 //      String IMAGE = "/image/cow-and-bird.jpg";
-        String IMAGE = "/image/eagle.jpg";
+        //String IMAGE = "/image/eagle.jpg";
+        String IMAGE = "/image/bikes.jpg";
         ImageProcessor imageProcessor = new ImageProcessor();
         imageProcessor.initObjectDetector();
         List<Recognition> recognitions = imageProcessor.recognizeImage(IMAGE);
         for (Recognition recognition : recognitions) {
-            System.out.printf("Object: %s - confidence: %f", recognition.getTitle(), recognition.getConfidence());
+            System.out.printf("Object: %s - confidence: %f box: %s",
+                    recognition.getTitle(), recognition.getConfidence(), recognition.getLocation());
+            ImageUtil.displayImage(recognition.getPixels());
         }
     }
 

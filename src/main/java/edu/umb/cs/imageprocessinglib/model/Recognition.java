@@ -1,5 +1,7 @@
 package edu.umb.cs.imageprocessinglib.model;
 
+import java.awt.image.BufferedImage;
+
 /**
  * An immutable result returned by a recognizer describing what was recognized.
  */
@@ -12,6 +14,7 @@ public final class Recognition {
     private final String title;
     private final Float confidence;
     private BoxPosition location;
+    private BufferedImage img=null;
 
     public Recognition(final Integer id, final String title,
                        final Float confidence, final BoxPosition location) {
@@ -37,6 +40,8 @@ public final class Recognition {
         return new BoxPosition(location, scaleX, scaleY);
     }
 
+    public BufferedImage getPixels(){ return img;}
+
     public BoxPosition getLocation() {
         return new BoxPosition(location);
     }
@@ -53,5 +58,13 @@ public final class Recognition {
                 ", confidence=" + confidence +
                 ", location=" + location +
                 '}';
+    }
+
+    public void loadPiexels(BufferedImage bufferedImage, int modelInSize){
+        float scaleX = (float) bufferedImage.getWidth() / modelInSize;
+        float scaleY = (float) bufferedImage.getHeight() / modelInSize;
+
+        BoxPosition slocation=getScaledLocation(scaleX, scaleY);
+        img=bufferedImage.getSubimage(slocation.getLeftInt(),slocation.getTopInt(),slocation.getWidthInt(),slocation.getHeightInt());
     }
 }

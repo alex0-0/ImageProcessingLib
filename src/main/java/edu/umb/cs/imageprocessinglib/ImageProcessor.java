@@ -33,6 +33,7 @@ import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.imgcodecs.Imgcodecs;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
 
@@ -60,13 +61,22 @@ public class ImageProcessor {
         byte[] image = ImageUtil.extractBytes(imagePath, ImageProcessor.class);
         List<Recognition> recognitions = detector.recognizeImage(image);
 
+        System.out.println(recognitions.size());
+        BufferedImage bimg=ImageUtil.createImageFromBytes(image);
+
+
         String fileName = imagePath.substring(imagePath.lastIndexOf("/") + 1, imagePath.length());
         ImageUtil.labelAndSaveImage(image, recognitions, fileName, YOLO_INPUT_SIZE);
-        ImageUtil.displayImage(ImageUtil.createImageFromBytes(image));
+        ImageUtil.displayImage(bimg);
 //        ImageUtil.
 
         //filter out low confidence recognition
-        recognitions.removeIf(r -> r.getConfidence() < minConfidence);
+        //recognitions.removeIf(r -> r.getConfidence() < minConfidence);
+
+
+        for (Recognition recognition : recognitions) {
+            recognition.loadPiexels(bimg, YOLO_INPUT_SIZE);
+        }
 
         return recognitions;
     }
