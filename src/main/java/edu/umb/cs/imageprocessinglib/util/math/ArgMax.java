@@ -3,8 +3,6 @@ package edu.umb.cs.imageprocessinglib.util.math;
 /**
  * ArgMax function to select the higher value and its index from the array.
  *
- * Created by Zoltan Szabo on 1/5/18.
- * URL: https://github.com/szaza/android-yolo-v2
  */
 public class ArgMax {
 

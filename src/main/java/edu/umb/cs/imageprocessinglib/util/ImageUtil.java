@@ -4,6 +4,7 @@ package edu.umb.cs.imageprocessinglib.util;
 import edu.umb.cs.imageprocessinglib.model.BoxPosition;
 import edu.umb.cs.imageprocessinglib.model.Recognition;
 import org.apache.commons.io.IOUtils;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 import javax.imageio.ImageIO;
@@ -118,6 +119,13 @@ public class ImageUtil {
         final byte[] targetPixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
         System.arraycopy(b, 0, targetPixels, 0, b.length);
         return image;
+    }
+
+    public static Mat BufferedImage2Mat(BufferedImage bi) {
+        Mat mat = new Mat(bi.getHeight(), bi.getWidth(), CvType.CV_8UC3);
+        byte[] data = ((DataBufferByte) bi.getRaster().getDataBuffer()).getData();
+        mat.put(0, 0, data);
+        return mat;
     }
 
     //display image

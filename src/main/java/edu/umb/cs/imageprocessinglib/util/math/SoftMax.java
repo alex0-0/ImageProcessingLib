@@ -5,8 +5,6 @@ package edu.umb.cs.imageprocessinglib.util.math;
  * For more information please read this article:
  * https://en.wikipedia.org/wiki/Softmax_function
  *
- * Created by Zoltan Szabo on 1/5/18.
- * URL: https://github.com/szaza/android-yolo-v2
  */
 
 public class SoftMax {
