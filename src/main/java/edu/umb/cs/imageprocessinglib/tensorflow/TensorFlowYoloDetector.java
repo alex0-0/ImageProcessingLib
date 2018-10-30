@@ -13,6 +13,10 @@ import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 import org.apache.commons.math3.analysis.function.Sigmoid;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -22,7 +26,6 @@ import java.util.PriorityQueue;
 
 /**
  * YOLOClassifier class implemented in Java by using the TensorFlow Java API
- * I also used this class in my android sample application here: https://github.com/szaza/android-yolo-v2
  */
 public class TensorFlowYoloDetector implements Classifier {
     private final static float OVERLAP_THRESHOLD = 0.5f;
@@ -39,8 +42,8 @@ public class TensorFlowYoloDetector implements Classifier {
     private int inputSize;
 
     // Pre-allocated buffers.
-    private int[] intValues;
-    private float[] floatValues;
+//    private int[] intValues;
+//    private float[] floatValues;
     private String[] outputNames;
     private String modelFileName;
 
@@ -83,8 +86,8 @@ public class TensorFlowYoloDetector implements Classifier {
 
         // Pre-allocate buffers.
         d.outputNames = outputName.split(",");
-        d.intValues = new int[inputSize * inputSize];
-        d.floatValues = new float[inputSize * inputSize * 3];
+//        d.intValues = new int[inputSize * inputSize];
+//        d.floatValues = new float[inputSize * inputSize * 3];
         d.blockSize = blockSize;
         d.modelFileName = modelFilename;
 
@@ -263,11 +266,17 @@ public class TensorFlowYoloDetector implements Classifier {
     }
 
     @Override
-    public List<Recognition> recognizeImage(byte[] image) {
+    public List<Recognition> recognizeImage(BufferedImage img) {
         List<Recognition> recognitions;
-        try (Tensor<Float> normalizedImage = normalizeImage(image)) {
+        ByteArrayOutputStream baos=new ByteArrayOutputStream();
+        try {
+            ImageIO.write(img, "jpg", baos );
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        byte[] data=baos.toByteArray();
+        try (Tensor<Float> normalizedImage = normalizeImage(data)) {
             recognitions = classifyImage(executeYOLOGraph(normalizedImage), LABELS);
-//            printToConsole(recognitions);
         }
         return recognitions;
     }

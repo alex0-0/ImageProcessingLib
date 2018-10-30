@@ -140,5 +140,12 @@ public class ImageUtil {
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
-    
+
+    public static void BGR2RGB(byte[] data) {
+        for (int i = 0; i < data.length; i += 3) {
+            byte tmp = data[i];
+            data[i] = data[i + 2];
+            data[i + 2] = tmp;
+        }
+    }
 }

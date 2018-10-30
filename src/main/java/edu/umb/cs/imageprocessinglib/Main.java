@@ -7,20 +7,23 @@ import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import org.opencv.core.*;
 import org.opencv.features2d.Features2d;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
 public class Main {
 
     public static void main(String[] args) throws IOException {
- //       testOpenCV();
+//        testOpenCV();
         testTensorFlow();
     }
 
     private static void testTensorFlow() throws IOException {
 //      String IMAGE = "/image/cow-and-bird.jpg";
         //String IMAGE = "/image/eagle.jpg";
-        String IMAGE = "/image/cars.jpg";
+        String IMAGE = "/image/bikes.jpg";
         ImageProcessor imageProcessor = new ImageProcessor();
         imageProcessor.initObjectDetector();
         List<Recognition> recognitions = imageProcessor.recognizeImage(IMAGE);
@@ -31,16 +34,14 @@ public class Main {
         }
     }
 
-    private static void testOpenCV() {
+    private static void testOpenCV() throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        Mat mat = Mat.eye(3, 3, CvType.CV_8UC1);
-        System.out.println("mat = " + mat.dump());
         //Reading the Image from the file
         System.out.println("Working Directory = " + System.getProperty("user.dir"));
-        //Imgcodecs imageCodecs = new Imgcodecs();
-//        String file ="/Users/alexli/IdeaProjects/ImageProcessingLib/src/main/resources/image/eagle.jpg";
         String file ="src/main/resources/image/eagle.jpg";
-        Mat img = ImageProcessor.loadImage(file); //imageCodecs.imread(file);
+        BufferedImage image = ImageIO.read(new File(file));
+        Mat img = ImageUtil.BufferedImage2Mat(image);
+//        Mat img = ImageProcessor.loadImage(file); //imageCodecs.imread(file);
 //        ImageFeature imageFeature = ImageProcessor.extractDistinctFeatures(img);
         ImageFeature imageFeature = ImageProcessor.extractFeatures(img);
 
