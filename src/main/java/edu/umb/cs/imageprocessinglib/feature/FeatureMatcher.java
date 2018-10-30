@@ -1,5 +1,6 @@
 package edu.umb.cs.imageprocessinglib.feature;
 
+import edu.umb.cs.imageprocessinglib.model.DescriptorType;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.DMatch;
 import org.opencv.core.KeyPoint;
@@ -23,11 +24,6 @@ import java.util.List;
  */
 
 public class FeatureMatcher {
-
-    public enum DescriptorType {
-        ORB,
-        SURF
-    }
 
 //    static private final double kConfidence = 0.99;
 //    static private final double kDistance = 3.0;
@@ -76,17 +72,17 @@ public class FeatureMatcher {
      * @return                      matched key points
      */
     public MatOfDMatch BFMatchFeature(Mat queryDescriptor, Mat templateDescriptor, DescriptorType dType) {
+        DescriptorMatcher m = matcher;
         if (dType != descriptorType) {
-            matcher = createMatcher(dType);
-            descriptorType = dType;
+            m = createMatcher(dType);
         }
         MatOfDMatch matches = new MatOfDMatch();
-        matcher.match(queryDescriptor, templateDescriptor, matches);
+        m.match(queryDescriptor, templateDescriptor, matches);
         return matches;
     }
 
     public MatOfDMatch matchFeature(Mat queryDescriptor, Mat templateDescriptor, MatOfKeyPoint queryKeyPoints, MatOfKeyPoint templateKeyPoints) {
-        return matchFeature(queryDescriptor, templateDescriptor, queryKeyPoints, templateKeyPoints, DescriptorType.ORB);
+        return matchFeature(queryDescriptor, templateDescriptor, queryKeyPoints, templateKeyPoints, descriptorType);
     }
     /**
      *
@@ -104,17 +100,17 @@ public class FeatureMatcher {
 //        MatOfDMatch matches = new MatOfDMatch();
 //        matcher.match(queryDescriptor, templateDescriptor, matches);       //k(final parameter) set to 1 will do crosscheck
 //        return matches;
+        DescriptorMatcher m = matcher;
 
         if (dType != descriptorType) {
-            matcher = createMatcher(dType);
-            descriptorType = dType;
+            m = createMatcher(dType);
         }
 
         ArrayList<MatOfDMatch> matches1 = new ArrayList<>();
         ArrayList<MatOfDMatch>  matches2 = new ArrayList<>();
 
-        matcher.knnMatch(queryDescriptor, templateDescriptor, matches1, 2);       //k(final parameter) set to 1 will do crosscheck
-        matcher.knnMatch(templateDescriptor, queryDescriptor, matches2, 2);
+        m.knnMatch(queryDescriptor, templateDescriptor, matches1, 2);       //k(final parameter) set to 1 will do crosscheck
+        m.knnMatch(templateDescriptor, queryDescriptor, matches2, 2);
 
         ratioTest(matches1);
         ratioTest(matches2);

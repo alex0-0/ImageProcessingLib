@@ -16,26 +16,26 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) throws IOException {
-//        testOpenCV();
-        testTensorFlow();
+        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+        testOpenCV();
+//        testTensorFlow();
     }
 
     private static void testTensorFlow() throws IOException {
 //      String IMAGE = "/image/cow-and-bird.jpg";
         //String IMAGE = "/image/eagle.jpg";
         String IMAGE = "/image/bikes.jpg";
-        ImageProcessor imageProcessor = new ImageProcessor();
-        imageProcessor.initObjectDetector();
-        List<Recognition> recognitions = imageProcessor.recognizeImage(IMAGE);
+        ObjectDetector objectDetector = new ObjectDetector();
+        objectDetector.init();
+        List<Recognition> recognitions = objectDetector.recognizeImage(IMAGE);
         for (Recognition recognition : recognitions) {
-            System.out.printf("Object: %s - confidence: %f box: %s",
+            System.out.printf("Object: %s - confidence: %f box: %s\n",
                     recognition.getTitle(), recognition.getConfidence(), recognition.getLocation());
-            ImageUtil.displayImage(recognition.getPixels());
+            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(recognition.getPixels()));
         }
     }
 
     private static void testOpenCV() throws IOException {
-        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         //Reading the Image from the file
         System.out.println("Working Directory = " + System.getProperty("user.dir"));
         String file ="src/main/resources/image/eagle.jpg";

@@ -1,5 +1,8 @@
 package edu.umb.cs.imageprocessinglib.model;
 
+import org.opencv.core.Mat;
+import org.opencv.core.Rect;
+
 import java.awt.image.BufferedImage;
 
 /**
@@ -14,7 +17,7 @@ public final class Recognition {
     private final String title;
     private final Float confidence;
     private BoxPosition location;
-    private BufferedImage img=null;
+    private Mat img=null;
 
     public Recognition(final Integer id, final String title,
                        final Float confidence, final BoxPosition location) {
@@ -40,7 +43,7 @@ public final class Recognition {
         return new BoxPosition(location, scaleX, scaleY);
     }
 
-    public BufferedImage getPixels(){ return img;}
+    public Mat getPixels(){ return img;}
 
     public BoxPosition getLocation() {
         return new BoxPosition(location);
@@ -60,11 +63,13 @@ public final class Recognition {
                 '}';
     }
 
-    public void loadPiexels(BufferedImage bufferedImage, int modelInSize){
-        float scaleX = (float) bufferedImage.getWidth() / modelInSize;
-        float scaleY = (float) bufferedImage.getHeight() / modelInSize;
+    public void loadPiexels(Mat oriImage, int modelInSize){
+        float scaleX = (float) oriImage.size().width / modelInSize;
+        float scaleY = (float) oriImage.size().height / modelInSize;
 
-        BoxPosition slocation=getScaledLocation(scaleX, scaleY);
-        img=bufferedImage.getSubimage(slocation.getLeftInt(),slocation.getTopInt(),slocation.getWidthInt(),slocation.getHeightInt());
+        BoxPosition slocation = getScaledLocation(scaleX, scaleY);
+        Rect rect = new Rect(slocation.getLeftInt(), slocation.getTopInt(), slocation.getWidthInt(), slocation.getHeightInt());
+//        img = oriImage.getSubimage(slocation.getLeftInt(),slocation.getTopInt(),slocation.getWidthInt(),slocation.getHeightInt());
+        img = new Mat(oriImage, rect);
     }
 }
