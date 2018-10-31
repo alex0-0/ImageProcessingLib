@@ -24,7 +24,7 @@ public class Main {
     private static void testTensorFlow() throws IOException {
 //      String IMAGE = "/image/cow-and-bird.jpg";
         //String IMAGE = "/image/eagle.jpg";
-        String IMAGE = "/image/bikes.jpg";
+        String IMAGE = "/image/dog_cat.jpg";
         ObjectDetector objectDetector = new ObjectDetector();
         objectDetector.init();
         List<Recognition> recognitions = objectDetector.recognizeImage(IMAGE);
@@ -70,7 +70,13 @@ public class Main {
         Mat des=imageFeature1.getDescriptors();
         MatOfKeyPoint kps=imageFeature1.getObjectKeypoints();
         //MatOfDMatch matches = ImageProcessor.matcheImages(imageFeature, new ImageFeature(kps, des));
+
+        System.out.printf("Comparing %d vs %d FPs ", imageFeature.getSize(),imageFeature.getSize());
+        long t_before=System.currentTimeMillis();
         MatOfDMatch matches = ImageProcessor.matcheImages(imageFeature, imageFeature1);
+        long t_after=System.currentTimeMillis();
+        System.out.printf("takes %.02f s\n", ((float)(t_after-t_before)/1000));
+
         System.out.printf("Precision: %f", (float)matches.total()/ imageFeature.getDescriptors().rows());
 
         MatOfDMatch m = new MatOfDMatch();
