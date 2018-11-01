@@ -17,14 +17,14 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        testOpenCV();
-//        testTensorFlow();
+//        testOpenCV();
+        testTensorFlow();
     }
 
     private static void testTensorFlow() throws IOException {
 //      String IMAGE = "/image/cow-and-bird.jpg";
         //String IMAGE = "/image/eagle.jpg";
-        String IMAGE = "/image/bikes.jpg";
+        String IMAGE = "/image/test_2.jpg";
         ObjectDetector objectDetector = new ObjectDetector();
         objectDetector.init();
         List<Recognition> recognitions = objectDetector.recognizeImage(IMAGE);
