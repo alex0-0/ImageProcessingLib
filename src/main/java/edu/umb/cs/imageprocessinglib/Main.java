@@ -4,6 +4,7 @@ import edu.umb.cs.imageprocessinglib.feature.FeatureStorage;
 import edu.umb.cs.imageprocessinglib.model.ImageFeature;
 import edu.umb.cs.imageprocessinglib.model.Recognition;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
+import edu.umb.cs.imageprocessinglib.util.StorageUtil;
 import org.opencv.core.*;
 import org.opencv.features2d.Features2d;
 
@@ -31,7 +32,11 @@ public class Main {
         for (Recognition recognition : recognitions) {
             System.out.printf("Object: %s - confidence: %f box: %s\n",
                     recognition.getTitle(), recognition.getConfidence(), recognition.getLocation());
-            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(recognition.getPixels()));
+
+            StorageUtil.saveRecognitionToFile(recognition,"test");
+            Recognition temp=StorageUtil.readRecognitionFromFile("test");
+            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(temp.getPixels()));
+            //ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(recognition.getPixels()));
         }
     }
 
