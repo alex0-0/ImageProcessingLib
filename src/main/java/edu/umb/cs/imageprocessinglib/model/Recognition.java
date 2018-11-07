@@ -3,6 +3,7 @@ package edu.umb.cs.imageprocessinglib.model;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import org.opencv.core.Mat;
 import org.opencv.core.Rect;
+import org.opencv.imgcodecs.Imgcodecs;
 
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
@@ -85,12 +86,13 @@ public final class Recognition implements Serializable {
 
     public void savePixels(Mat oriImage, int modelInSize){
         Mat pixels = cropPixels(oriImage, modelInSize);
-        BufferedImage img = ImageUtil.Mat2BufferedImage(pixels);
-        ImageUtil.saveImage(img, TAG + "_" + uuid + ".jpg" );
+        Imgcodecs.imwrite(TAG + "_" + uuid + ".png", pixels);
+//        BufferedImage img = ImageUtil.Mat2BufferedImage(pixels);
+//        ImageUtil.saveImage(img, TAG + "_" + uuid + ".jpg" );
     }
 
     //read image from storage
-    public BufferedImage loadPixels(){
-        return ImageUtil.loadImage(TAG + "_" + uuid + ".jpg" );
+    public Mat loadPixels(){
+        return Imgcodecs.imread(TAG + "_" + uuid + ".png" );
     }
 }

@@ -40,7 +40,7 @@ public class Main {
             //ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(recognition.getPixels()));
         }
         Recognition temp=StorageUtil.readRecognitionFromFile("test");
-        ImageUtil.displayImage(temp.loadPixels());
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(temp.loadPixels()));
     }
 
     private static void testOpenCV() throws IOException {
