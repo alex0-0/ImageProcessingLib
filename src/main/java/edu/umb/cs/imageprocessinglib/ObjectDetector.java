@@ -74,7 +74,7 @@ public class ObjectDetector {
 
 /*
         for (Recognition recognition : recognitions) {
-            recognition.loadPiexels(bimg, YOLO_INPUT_SIZE);
+            recognition.loadPixels(bimg, YOLO_INPUT_SIZE);
         }
 */
         return recognitions;
@@ -86,7 +86,7 @@ public class ObjectDetector {
                 stream().
                 filter(r -> r.getConfidence() >= minConfidence).
                 map(r -> {
-                    r.savePiexels(ImageUtil.BufferedImage2Mat(image), cropSize);
+                    r.savePixels(ImageUtil.BufferedImage2Mat(image), cropSize);
 //                    ImageUtil.displayImage(r.getPixels());
                     return r;
                 }).collect(Collectors.toList());

@@ -72,7 +72,7 @@ public final class Recognition implements Serializable {
                 '}';
     }
 
-    public Mat cropPiexels(Mat oriImage, int modelInSize){
+    public Mat cropPixels(Mat oriImage, int modelInSize){
         float scaleX = (float) oriImage.size().width / modelInSize;
         float scaleY = (float) oriImage.size().height / modelInSize;
 
@@ -83,14 +83,14 @@ public final class Recognition implements Serializable {
         return new Mat(oriImage, rect);
     }
 
-    public void savePiexels(Mat oriImage, int modelInSize){
-        Mat pixels = cropPiexels(oriImage, modelInSize);
+    public void savePixels(Mat oriImage, int modelInSize){
+        Mat pixels = cropPixels(oriImage, modelInSize);
         BufferedImage img = ImageUtil.Mat2BufferedImage(pixels);
         ImageUtil.saveImage(img, TAG + "_" + uuid + ".jpg" );
     }
 
     //read image from storage
-    public BufferedImage loadPiexels(){
+    public BufferedImage loadPixels(){
         return ImageUtil.loadImage(TAG + "_" + uuid + ".jpg" );
     }
 }

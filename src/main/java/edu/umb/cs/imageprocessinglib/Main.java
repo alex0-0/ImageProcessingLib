@@ -35,12 +35,12 @@ public class Main {
 
             StorageUtil.saveRecognitionToFile(recognition,"test");
 //            Recognition temp=StorageUtil.readRecognitionFromFile("test");
-//            ImageUtil.displayImage(temp.loadPiexels());
+//            ImageUtil.displayImage(temp.loadPixels());
 //            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(temp.getPixels()));
             //ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(recognition.getPixels()));
         }
         Recognition temp=StorageUtil.readRecognitionFromFile("test");
-        ImageUtil.displayImage(temp.loadPiexels());
+        ImageUtil.displayImage(temp.loadPixels());
     }
 
     private static void testOpenCV() throws IOException {
