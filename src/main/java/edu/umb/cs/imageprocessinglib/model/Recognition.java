@@ -1,14 +1,22 @@
 package edu.umb.cs.imageprocessinglib.model;
 
+import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import org.opencv.core.Mat;
 import org.opencv.core.Rect;
 
+import java.awt.image.BufferedImage;
 import java.io.Serializable;
+import java.util.UUID;
 
 /**
  * An immutable result returned by a recognizer describing what was recognized.
  */
 public final class Recognition implements Serializable {
+    private static String TAG = "Recognition";
+
+    //Unique identifier for this object
+    private String uuid;
+
     /**
      * A unique identifier for what has been recognized. Specific to the class, not the instance of
      * the object.
@@ -17,7 +25,7 @@ public final class Recognition implements Serializable {
     private final String title;
     private final Float confidence;
     private BoxPosition location;
-    private Mat img=null;
+//    private Mat img=null;
 
     public Recognition(final Integer id, final String title,
                        final Float confidence, final BoxPosition location) {
@@ -25,6 +33,7 @@ public final class Recognition implements Serializable {
         this.title = title;
         this.confidence = confidence;
         this.location = location;
+        uuid = UUID.randomUUID().toString();
     }
 
     public Integer getId() {
@@ -43,7 +52,7 @@ public final class Recognition implements Serializable {
         return new BoxPosition(location, scaleX, scaleY);
     }
 
-    public Mat getPixels(){ return img;}
+//    public Mat getPixels(){ return img;}
 
     public BoxPosition getLocation() {
         return new BoxPosition(location);
@@ -63,13 +72,25 @@ public final class Recognition implements Serializable {
                 '}';
     }
 
-    public void loadPiexels(Mat oriImage, int modelInSize){
+    public Mat cropPiexels(Mat oriImage, int modelInSize){
         float scaleX = (float) oriImage.size().width / modelInSize;
         float scaleY = (float) oriImage.size().height / modelInSize;
 
         BoxPosition slocation = getScaledLocation(scaleX, scaleY);
         Rect rect = new Rect(slocation.getLeftInt(), slocation.getTopInt(), slocation.getWidthInt(), slocation.getHeightInt());
 //        img = oriImage.getSubimage(slocation.getLeftInt(),slocation.getTopInt(),slocation.getWidthInt(),slocation.getHeightInt());
-        img = new Mat(oriImage, rect);
+//        img = new Mat(oriImage, rect);
+        return new Mat(oriImage, rect);
+    }
+
+    public void savePiexels(Mat oriImage, int modelInSize){
+        Mat pixels = cropPiexels(oriImage, modelInSize);
+        BufferedImage img = ImageUtil.Mat2BufferedImage(pixels);
+        ImageUtil.saveImage(img, TAG + "_" + uuid + ".jpg" );
+    }
+
+    //read image from storage
+    public BufferedImage loadPiexels(){
+        return ImageUtil.loadImage(TAG + "_" + uuid + ".jpg" );
     }
 }

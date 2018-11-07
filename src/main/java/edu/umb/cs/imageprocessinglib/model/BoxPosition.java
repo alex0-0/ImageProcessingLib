@@ -1,9 +1,11 @@
 package edu.umb.cs.imageprocessinglib.model;
 
+import java.io.Serializable;
+
 /**
  * Model to store the position of the bounding boxes
  */
-public class BoxPosition {
+public class BoxPosition implements Serializable {
     private float left;
     private float top;
     private float right;

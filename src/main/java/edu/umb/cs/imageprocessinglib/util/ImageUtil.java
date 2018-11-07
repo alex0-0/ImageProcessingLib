@@ -89,12 +89,23 @@ public class ImageUtil {
         }
     }
 
+    public static BufferedImage loadImage(final String filePath) {
+        BufferedImage img = null;
+        try {
+            img = ImageIO.read(new File(filePath));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return img;
+    }
+
     public static BufferedImage createImageFromBytes(final byte[] imageData) {
         ByteArrayInputStream bais = new ByteArrayInputStream(imageData);
         try {
             return ImageIO.read(bais);
         } catch (IOException ex) {
-            throw new ServiceException("Unable to create image from bytes!", ex);
+            ex.printStackTrace();
+            return null;
         }
     }
 

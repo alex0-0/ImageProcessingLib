@@ -86,7 +86,7 @@ public class ObjectDetector {
                 stream().
                 filter(r -> r.getConfidence() >= minConfidence).
                 map(r -> {
-                    r.loadPiexels(ImageUtil.BufferedImage2Mat(image), cropSize);
+                    r.savePiexels(ImageUtil.BufferedImage2Mat(image), cropSize);
 //                    ImageUtil.displayImage(r.getPixels());
                     return r;
                 }).collect(Collectors.toList());
