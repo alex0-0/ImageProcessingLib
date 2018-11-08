@@ -5,8 +5,6 @@ import edu.umb.cs.imageprocessinglib.model.BoxPosition;
 import edu.umb.cs.imageprocessinglib.model.Recognition;
 import edu.umb.cs.imageprocessinglib.util.GraphBuilder;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
-import edu.umb.cs.imageprocessinglib.util.math.ArgMax;
-import edu.umb.cs.imageprocessinglib.util.math.SoftMax;
 import org.tensorflow.Graph;
 import org.tensorflow.Output;
 import org.tensorflow.Session;
@@ -15,7 +13,6 @@ import org.apache.commons.math3.analysis.function.Sigmoid;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.FloatBuffer;
@@ -170,13 +167,41 @@ public class TensorFlowYoloDetector implements Classifier {
         return model;
     }
 
+    private double[] getSoftMax(double[] params) {
+        double sum = 0;
+
+        for (int i=0; i<params.length; i++) {
+            params[i] = Math.exp(params[i]);
+            sum += params[i];
+        }
+
+        if (Double.isNaN(sum) || sum < 0) {
+            for (int i=0; i<params.length; i++) {
+                params[i] = 1.0 / params.length;
+            }
+        } else {
+            for (int i=0; i<params.length; i++) {
+                params[i] = params[i] / sum;
+            }
+        }
+
+        return params;
+    }
+
     private void calculateTopPredictions(final BoundingBox boundingBox, final PriorityQueue<Recognition> predictionQueue,
                                          final String[] labels) {
         for (int i=0; i<boundingBox.getClasses().length; i++) {
-            ArgMax.Result argMax = new ArgMax(new SoftMax(boundingBox.getClasses()).getValue()).getResult();
-            double confidenceInClass = argMax.getMaxValue() * boundingBox.getConfidence();
+            double[] results = getSoftMax(boundingBox.getClasses());
+
+            //get max result
+            int maxIndex = 0;
+            for (int k = 0; k < results.length; k++)
+                if (results[k] > results[maxIndex])
+                    maxIndex = k;
+
+            double confidenceInClass = results[maxIndex] * boundingBox.getConfidence();
             if (confidenceInClass > THRESHOLD) {
-                predictionQueue.add(new Recognition(argMax.getIndex(), labels[argMax.getIndex()], (float) confidenceInClass,
+                predictionQueue.add(new Recognition(maxIndex, labels[maxIndex], (float) confidenceInClass,
                         new BoxPosition((float) (boundingBox.getX() - boundingBox.getWidth() / 2),
                                 (float) (boundingBox.getY() - boundingBox.getHeight() / 2),
                                 (float) boundingBox.getWidth(),

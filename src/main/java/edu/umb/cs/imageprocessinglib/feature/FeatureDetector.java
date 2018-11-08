@@ -1,5 +1,6 @@
 package edu.umb.cs.imageprocessinglib.feature;
 
+import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import org.opencv.core.DMatch;
 import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
@@ -35,6 +36,12 @@ public class FeatureDetector {
         return ourInstance;
     }
 
+    //init ORB detector with specific limit on feature number,
+    // this constructor is only used for ORB detector, since no SURF detector is initialized
+    public FeatureDetector(int feautureNum) {
+        orb = ORB.create(feautureNum, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
+    }
+
     private FeatureDetector() {
         FAST = FastFeatureDetector.create();
         surf = SURF.create();
@@ -52,20 +59,6 @@ public class FeatureDetector {
 
     }
     public void extractFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
-//        FAST.detect(img, keyPoints);
-//        //too many features cause poor performance on mobile
-//        if (keyPoints.total() > kMaxFeatures) {
-//            List<KeyPoint> listOfKeyPoints = keyPoints.toList();
-//            Collections.sort(listOfKeyPoints, new Comparator<KeyPoint>() {
-//                @Override
-//                public int compare(KeyPoint o1, KeyPoint o2) {
-//                    return (int) (o2.response - o1.response);
-//                }
-//            });
-//            keyPoints.fromList(listOfKeyPoints.subList(0, kMaxFeatures));
-//        }
-//        surf.detectAndCompute(img, new Mat(), keyPoints, descriptors);
-//        surf.compute(img, keyPoints, descriptors);
         extractORBFeatures(img, keyPoints, descriptors);
     }
 
@@ -132,7 +125,6 @@ public class FeatureDetector {
     /**
      * Get a group of distorted images by applying transformation on original image
      * For now only scale and rotation is applying on the image
-     * TODO: Affine transformation, perspective transformation, refer to https://docs.opencv.org/3.4.0/da/d6e/tutorial_py_geometric_transformations.html
      * @param image
      * @return          a group of distorted images
      */
@@ -156,18 +148,9 @@ public class FeatureDetector {
      */
     private ArrayList<Mat> scaleImage(Mat image) {
         ArrayList<Mat> r = new ArrayList<>();
-        Size size = image.size();
-        double rows = size.height;
-        double cols = size.width;
         for (int i = 1; i <= kNumOfScales /2; i++) {
-            Mat largerImage = new Mat();
-            Mat smallerImage = new Mat();
-            Size newSize = new Size(rows * (1 + i * kStepScale), cols * (1 + i * kStepScale));
-            Imgproc.resize(image, largerImage, newSize);
-            newSize = new Size(rows * (1 - i * kStepScale), cols * (1 - i * kStepScale));
-            Imgproc.resize(image, smallerImage, newSize);
-            r.add(largerImage);
-            r.add(smallerImage);
+            r.add(ImageUtil.scaleImage(image, (1 + i * kStepScale)));
+            r.add(ImageUtil.scaleImage(image, (1 - i * kStepScale)));
         }
 
         return r;
@@ -183,21 +166,9 @@ public class FeatureDetector {
      */
     private ArrayList<Mat> rotateImage(Mat image) {
         ArrayList<Mat> r = new ArrayList<>();
-        Size size = image.size();//new Size(image.cols(), image.rows());
-        Point center = new Point(size.width/2, size.height/2);
         for (int i = 1; i <= kNumOfRotations /2; i++) {
-            Mat leftRotated = new Mat();
-            Mat rightRotated = new Mat();
-
-            //create transformation matrix
-            Mat leftMatrix = Imgproc.getRotationMatrix2D(center, -kStepAngle * i, 1);
-            Mat rightMatrix = Imgproc.getRotationMatrix2D(center, kStepAngle * i, 1);
-            Imgproc.warpAffine(image, leftRotated, leftMatrix, size);
-            Imgproc.warpAffine(image, rightRotated, rightMatrix, size);
-            r.add(leftRotated);
-            r.add(rightRotated);
-            leftMatrix.release();
-            rightMatrix.release();
+            r.add(ImageUtil.rotateImage(image, -kStepAngle * i));
+            r.add(ImageUtil.rotateImage(image, kStepAngle * i));
         }
 
         return r;
@@ -305,4 +276,6 @@ public class FeatureDetector {
 
         return r;
     }
+
+
 }

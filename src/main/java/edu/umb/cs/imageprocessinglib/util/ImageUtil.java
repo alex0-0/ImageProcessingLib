@@ -6,6 +6,9 @@ import edu.umb.cs.imageprocessinglib.model.Recognition;
 import org.apache.commons.io.IOUtils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -158,5 +161,49 @@ public class ImageUtil {
             data[i] = data[i + 2];
             data[i + 2] = tmp;
         }
+    }
+
+    /**
+     * Rotate original image to generate a group of distorted image
+     * @param image     original image
+     * @return          a list containing rotated images
+     */
+    public static Mat rotateImage(Mat image, float angle) {
+        Mat rotatedImg = new Mat();
+        Size size = image.size();
+        Point center = new Point(size.width/2, size.height/2);
+        Mat matrix = Imgproc.getRotationMatrix2D(center, angle, 1);
+        Imgproc.warpAffine(image, rotatedImg, matrix, size);
+        matrix.release();
+        return rotatedImg;
+    }
+
+    /**
+     * Scale original image to generate a group of distorted image
+     * @param image     original image
+     * @param scale     scale
+     * @return          a list containing scaled images
+     */
+    public static Mat scaleImage(Mat image, float scale) {
+        Mat scaledImage = new Mat();
+        Size size = image.size();
+        double rows = size.height;
+        double cols = size.width;
+        Size newSize = new Size(rows * scale, cols * scale);
+        Imgproc.resize(image, scaledImage, newSize);
+        return scaledImage;
+    }
+
+    /**
+     * Adjust original image bright. p(i,j) = α⋅p(i,j)+β
+     * @param image     original image
+     * @param alpha     alpha
+     * @param beta      beta
+     * @return          a list containing scaled images
+     */
+    public static Mat lightImage(Mat image, float alpha, int beta) {
+        Mat newImage = new Mat();
+        image.convertTo(newImage, -1, alpha, beta);
+        return newImage;
     }
 }
