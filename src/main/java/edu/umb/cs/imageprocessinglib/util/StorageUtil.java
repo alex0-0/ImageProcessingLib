@@ -1,6 +1,8 @@
 package edu.umb.cs.imageprocessinglib.util;
 
 import edu.umb.cs.imageprocessinglib.model.Recognition;
+import org.opencv.core.Mat;
+import org.opencv.imgcodecs.Imgcodecs;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -8,6 +10,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 public class StorageUtil {
+
+    public static String RECOGNITION_TAG="Recognition";
 
     public static void saveRecognitionToFile(Recognition rec, String filename) {
         try {
@@ -25,7 +29,7 @@ public class StorageUtil {
         }catch(Exception e){System.out.println(e);}
     }
 
-    public  static Recognition readRecognitionFromFile(String filename){
+    public static Recognition readRecognitionFromFile(String filename){
         Recognition ret=null;
         try {
             FileInputStream fileIn = new FileInputStream(filename);
@@ -42,5 +46,11 @@ public class StorageUtil {
 
         return ret;
     }
+
+    public static Mat readMatFromFile(String filename){
+
+        return Imgcodecs.imread(filename);
+    }
+
 
 }

@@ -1,11 +1,10 @@
 package edu.umb.cs.imageprocessinglib.model;
 
-import edu.umb.cs.imageprocessinglib.util.ImageUtil;
+import edu.umb.cs.imageprocessinglib.util.StorageUtil;
 import org.opencv.core.Mat;
 import org.opencv.core.Rect;
 import org.opencv.imgcodecs.Imgcodecs;
 
-import java.awt.image.BufferedImage;
 import java.io.Serializable;
 import java.util.UUID;
 
@@ -13,7 +12,7 @@ import java.util.UUID;
  * An immutable result returned by a recognizer describing what was recognized.
  */
 public final class Recognition implements Serializable {
-    private static String TAG = "Recognition";
+    private static String TAG = StorageUtil.RECOGNITION_TAG;
 
     //Unique identifier for this object
     private String uuid;

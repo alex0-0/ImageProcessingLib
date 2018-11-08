@@ -5,11 +5,12 @@ import edu.umb.cs.imageprocessinglib.model.ImageFeature;
 import edu.umb.cs.imageprocessinglib.model.Recognition;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import edu.umb.cs.imageprocessinglib.util.StorageUtil;
-import org.opencv.core.*;
+import org.opencv.core.Core;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfDMatch;
+import org.opencv.core.MatOfKeyPoint;
 import org.opencv.features2d.Features2d;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -18,8 +19,8 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-//        testOpenCV();
-        testTensorFlow();
+        testOpenCV();
+        //testTensorFlow();
     }
 
     private static void testTensorFlow() throws IOException {
@@ -45,10 +46,32 @@ public class Main {
 
     private static void testOpenCV() throws IOException {
         //Reading the Image from the file
-        System.out.println("Working Directory = " + System.getProperty("user.dir"));
-        String file ="src/main/resources/image/eagle.jpg";
-        BufferedImage image = ImageIO.read(new File(file));
-        Mat img = ImageUtil.BufferedImage2Mat(image);
+        // System.out.println("Working Directory = " + System.getProperty("user.dir"));
+        //String file ="src/main/resources/image/eagle.jpg";
+        //BufferedImage image = ImageIO.read(new File(file));
+        //Mat img = ImageUtil.BufferedImage2Mat(image);
+
+        File folder = new File(".");
+        File[] listOfFiles = folder.listFiles();
+
+        String prefix = StorageUtil.RECOGNITION_TAG;
+
+        for (int i = 0; i < listOfFiles.length; i++) {
+            if (listOfFiles[i].isFile()) {
+                String filename = listOfFiles[i].getName();
+                if (filename.contains(prefix)) {
+                    System.out.println(filename);
+                    testFP(filename);
+                    break;
+                }
+            }
+        }
+
+    }
+
+    private static void testFP(String filename){
+        Mat img = StorageUtil.readMatFromFile(filename);
+
 //        Mat img = ImageProcessor.loadImage(file); //imageCodecs.imread(file);
 //        ImageFeature imageFeature = ImageProcessor.extractDistinctFeatures(img);
         ImageFeature imageFeature = ImageProcessor.extractFeatures(img);
