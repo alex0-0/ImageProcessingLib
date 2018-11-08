@@ -1,5 +1,7 @@
 package edu.umb.cs.imageprocessinglib.model;
 
+import edu.umb.cs.imageprocessinglib.ImageProcessor;
+import edu.umb.cs.imageprocessinglib.feature.FeatureStorage;
 import edu.umb.cs.imageprocessinglib.util.StorageUtil;
 import org.opencv.core.Mat;
 import org.opencv.core.Rect;
@@ -85,7 +87,11 @@ public final class Recognition implements Serializable {
 
     public void savePixels(Mat oriImage, int modelInSize){
         Mat pixels = cropPixels(oriImage, modelInSize);
-        Imgcodecs.imwrite(TAG + "_" + uuid + ".png", pixels);
+        savePixels(pixels);
+    }
+
+    public void savePixels(Mat image){
+        Imgcodecs.imwrite(TAG + "_" + uuid + ".png", image);
 //        BufferedImage img = ImageUtil.Mat2BufferedImage(pixels);
 //        ImageUtil.saveImage(img, TAG + "_" + uuid + ".jpg" );
     }
@@ -93,5 +99,39 @@ public final class Recognition implements Serializable {
     //read image from storage
     public Mat loadPixels(){
         return Imgcodecs.imread(TAG + "_" + uuid + ".png" );
+    }
+
+    //extract recognized object's feature points
+    public ImageFeature extractFeature(Mat oriImage, int modelInSize){
+        return extractFeature(cropPixels(oriImage, modelInSize));
+    }
+
+    //extract recognized object's feature points
+    public ImageFeature extractFeature(Mat croppedImage){
+        return ImageProcessor.extractFeatures(croppedImage);
+    }
+
+    public void saveFeature(Mat oriImage, int modelInSize){
+        Mat pixels = cropPixels(oriImage, modelInSize);
+        saveFeature(pixels);
+    }
+
+    public void saveFeature(Mat croppedImage){
+        ImageFeature imageFeature = ImageProcessor.extractFeatures(croppedImage);
+        saveFeature(imageFeature);
+    }
+
+    public void saveFeature(ImageFeature imageFeature) {
+        FeatureStorage fs = new FeatureStorage();
+        String filePath = TAG + "_" + "feature_" + uuid + ".xml";
+        fs.saveFPtoFile(filePath, imageFeature);
+
+    }
+
+    //read image from storage
+    public ImageFeature loadFeature(){
+        FeatureStorage fs = new FeatureStorage();
+        String filePath = TAG + "_" + "feature_" + uuid + ".xml";
+        return fs.loadFPfromFile(filePath);
     }
 }

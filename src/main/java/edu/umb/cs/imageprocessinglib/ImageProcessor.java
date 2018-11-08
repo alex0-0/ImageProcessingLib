@@ -32,6 +32,17 @@ public class ImageProcessor {
     }
 
     /*
+    Extract image feature points with ORB detector, the bound of the number of feature points is num
+     */
+    static public ImageFeature extractORBFeatures(Mat img, int num) {
+        MatOfKeyPoint kps = new MatOfKeyPoint();
+        Mat des = new Mat();
+        FeatureDetector fd = new FeatureDetector(num);
+        fd.extractORBFeatures(img, kps, des);
+        return new ImageFeature(kps, des, DescriptorType.ORB);
+    }
+
+    /*
     Extract image feature points
      */
     static public ImageFeature extractFeatures(Mat img) {

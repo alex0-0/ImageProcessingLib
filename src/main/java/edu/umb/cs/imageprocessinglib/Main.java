@@ -11,6 +11,7 @@ import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.features2d.Features2d;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -19,17 +20,18 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        testOpenCV();
-        //testTensorFlow();
+//        testOpenCV();
+        testTensorFlow();
     }
 
     private static void testTensorFlow() throws IOException {
 //      String IMAGE = "/image/cow-and-bird.jpg";
         //String IMAGE = "/image/eagle.jpg";
-        String IMAGE = "/image/test_10.jpg";
+        String imgPath = "src/main/resources/image/test_10.jpg";
+        BufferedImage img = ImageUtil.loadImage(imgPath);
         ObjectDetector objectDetector = new ObjectDetector();
         objectDetector.init();
-        List<Recognition> recognitions = objectDetector.recognizeImage(IMAGE);
+        List<Recognition> recognitions = objectDetector.recognizeImage(img);
         for (Recognition recognition : recognitions) {
             System.out.printf("Object: %s - confidence: %f box: %s\n",
                     recognition.getTitle(), recognition.getConfidence(), recognition.getLocation());
@@ -41,7 +43,13 @@ public class Main {
             //ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(recognition.getPixels()));
         }
         Recognition temp=StorageUtil.readRecognitionFromFile("test");
-        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(temp.loadPixels()));
+        Mat croppedImg = temp.loadPixels();
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(croppedImg));
+        ImageFeature imageFeature = temp.loadFeature();
+        MatOfDMatch m = ImageProcessor.matcheImages(imageFeature, imageFeature);
+        Mat display = new Mat();
+        Features2d.drawMatches(croppedImg, imageFeature.getObjectKeypoints(), croppedImg, imageFeature.getObjectKeypoints(), m, display);
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
     }
 
     private static void testOpenCV() throws IOException {
@@ -108,7 +116,7 @@ public class Main {
         long t_after=System.currentTimeMillis();
         System.out.printf("takes %.02f s\n", ((float)(t_after-t_before)/1000));
 
-        System.out.printf("Precision: %f", (float)matches.total()/ imageFeature.getDescriptors().rows());
+        System.out.printf("Precision: %f\n", (float)matches.total()/ imageFeature.getDescriptors().rows());
 
         MatOfDMatch m = new MatOfDMatch();
         m.fromList(matches.toList().subList(0,50));
@@ -116,5 +124,17 @@ public class Main {
         Mat display = new Mat();
         Features2d.drawMatches(img, kps, img, kps, m, display);
         ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+
+        //test the influence of feature points number on matching time
+        for (int i = 100; i <= 500; i += 50) {
+            ImageFeature feature = ImageProcessor.extractORBFeatures(img, i);
+            System.out.printf("Comparing %d vs %d FPs ", feature.getSize(),feature.getSize());
+            long before=System.currentTimeMillis();
+            MatOfDMatch ms = ImageProcessor.matcheImages(feature, feature);
+            long after=System.currentTimeMillis();
+            System.out.printf("takes %.03f s\n", ((float)(after-before)/1000));
+        }
+        //display lighted image
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(ImageUtil.lightImage(img, 1.8f, 20)));
     }
 }

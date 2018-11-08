@@ -64,21 +64,9 @@ public class ObjectDetector {
     public List<Recognition> recognizeImage(String imagePath) throws IOException {
         BufferedImage bImg = ImageIO.read(getClass().getResource(imagePath));
         List<Recognition> recognitions = recognizeImage(bImg);
-
-//        System.out.println(recognitions.size());
-
-
-//        String fileName = imagePath.substring(imagePath.lastIndexOf("/") + 1, imagePath.length());
-//        ImageUtil.labelAndSaveImage(image, recognitions, fileName, YOLO_INPUT_SIZE);
-//        ImageUtil.displayImage(bImg);
-
-/*
-        for (Recognition recognition : recognitions) {
-            recognition.loadPixels(bimg, YOLO_INPUT_SIZE);
-        }
-*/
         return recognitions;
     }
+
     public List<Recognition> recognizeImage(BufferedImage image) {
 
         List<Recognition> recognitions = detector.recognizeImage(image);
@@ -87,6 +75,7 @@ public class ObjectDetector {
                 filter(r -> r.getConfidence() >= minConfidence).
                 map(r -> {
                     r.savePixels(ImageUtil.BufferedImage2Mat(image), cropSize);
+                    r.saveFeature(ImageUtil.BufferedImage2Mat(image), cropSize);
 //                    ImageUtil.displayImage(r.getPixels());
                     return r;
                 }).collect(Collectors.toList());
