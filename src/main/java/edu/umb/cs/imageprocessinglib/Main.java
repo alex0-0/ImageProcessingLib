@@ -32,24 +32,33 @@ public class Main {
         ObjectDetector objectDetector = new ObjectDetector();
         objectDetector.init();
         List<Recognition> recognitions = objectDetector.recognizeImage(img);
+        int i = 0;
         for (Recognition recognition : recognitions) {
             System.out.printf("Object: %s - confidence: %f box: %s\n",
                     recognition.getTitle(), recognition.getConfidence(), recognition.getLocation());
 
-            StorageUtil.saveRecognitionToFile(recognition,"test");
+            StorageUtil.saveRecognitionToFile(recognition,"test" + (++i));
 //            Recognition temp=StorageUtil.readRecognitionFromFile("test");
 //            ImageUtil.displayImage(temp.loadPixels());
 //            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(temp.getPixels()));
             //ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(recognition.getPixels()));
+            Recognition temp = StorageUtil.readRecognitionFromFile("test" + i);
+            Mat croppedImg = temp.loadPixels();
+            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(croppedImg));
+            ImageFeature imageFeature = temp.loadFeature();
+            MatOfDMatch m = ImageProcessor.matcheImages(imageFeature, imageFeature);
+            Mat display = new Mat();
+            Features2d.drawMatches(croppedImg, imageFeature.getObjectKeypoints(), croppedImg, imageFeature.getObjectKeypoints(), m, display);
+            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
         }
-        Recognition temp=StorageUtil.readRecognitionFromFile("test");
-        Mat croppedImg = temp.loadPixels();
-        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(croppedImg));
-        ImageFeature imageFeature = temp.loadFeature();
-        MatOfDMatch m = ImageProcessor.matcheImages(imageFeature, imageFeature);
-        Mat display = new Mat();
-        Features2d.drawMatches(croppedImg, imageFeature.getObjectKeypoints(), croppedImg, imageFeature.getObjectKeypoints(), m, display);
-        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+//        Recognition temp=StorageUtil.readRecognitionFromFile("test");
+//        Mat croppedImg = temp.loadPixels();
+//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(croppedImg));
+//        ImageFeature imageFeature = temp.loadFeature();
+//        MatOfDMatch m = ImageProcessor.matcheImages(imageFeature, imageFeature);
+//        Mat display = new Mat();
+//        Features2d.drawMatches(croppedImg, imageFeature.getObjectKeypoints(), croppedImg, imageFeature.getObjectKeypoints(), m, display);
+//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
     }
 
     private static void testOpenCV() throws IOException {

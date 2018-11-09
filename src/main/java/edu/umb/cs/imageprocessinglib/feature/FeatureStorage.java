@@ -444,8 +444,8 @@ public class FeatureStorage {
         release();
     }
 
-    public ImageFeature loadFPfromFile(String file){
-        open("des.xml");
+    public ImageFeature loadFPfromFile(String filePath){
+        open(filePath);
         Mat des = readMat("des");
         MatOfKeyPoint kps = readKeyPoints("keypoint");
         return new ImageFeature(kps, des);

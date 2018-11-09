@@ -74,7 +74,7 @@ public final class Recognition implements Serializable {
                 '}';
     }
 
-    public Mat cropPixels(Mat oriImage, int modelInSize){
+    public Mat cropPixels(Mat oriImage, int modelInSize) {
         float scaleX = (float) oriImage.size().width / modelInSize;
         float scaleY = (float) oriImage.size().height / modelInSize;
 
@@ -85,38 +85,38 @@ public final class Recognition implements Serializable {
         return new Mat(oriImage, rect);
     }
 
-    public void savePixels(Mat oriImage, int modelInSize){
+    public void savePixels(Mat oriImage, int modelInSize) {
         Mat pixels = cropPixels(oriImage, modelInSize);
         savePixels(pixels);
     }
 
-    public void savePixels(Mat image){
+    public void savePixels(Mat image) {
         Imgcodecs.imwrite(TAG + "_" + uuid + ".png", image);
 //        BufferedImage img = ImageUtil.Mat2BufferedImage(pixels);
 //        ImageUtil.saveImage(img, TAG + "_" + uuid + ".jpg" );
     }
 
     //read image from storage
-    public Mat loadPixels(){
+    public Mat loadPixels() {
         return Imgcodecs.imread(TAG + "_" + uuid + ".png" );
     }
 
     //extract recognized object's feature points
-    public ImageFeature extractFeature(Mat oriImage, int modelInSize){
+    public ImageFeature extractFeature(Mat oriImage, int modelInSize) {
         return extractFeature(cropPixels(oriImage, modelInSize));
     }
 
     //extract recognized object's feature points
-    public ImageFeature extractFeature(Mat croppedImage){
+    public ImageFeature extractFeature(Mat croppedImage) {
         return ImageProcessor.extractFeatures(croppedImage);
     }
 
-    public void saveFeature(Mat oriImage, int modelInSize){
+    public void saveFeature(Mat oriImage, int modelInSize) {
         Mat pixels = cropPixels(oriImage, modelInSize);
         saveFeature(pixels);
     }
 
-    public void saveFeature(Mat croppedImage){
+    public void saveFeature(Mat croppedImage) {
         ImageFeature imageFeature = ImageProcessor.extractFeatures(croppedImage);
         saveFeature(imageFeature);
     }
@@ -129,7 +129,7 @@ public final class Recognition implements Serializable {
     }
 
     //read image from storage
-    public ImageFeature loadFeature(){
+    public ImageFeature loadFeature() {
         FeatureStorage fs = new FeatureStorage();
         String filePath = TAG + "_" + "feature_" + uuid + ".xml";
         return fs.loadFPfromFile(filePath);
