@@ -64,6 +64,10 @@ public final class Recognition implements Serializable {
         this.location = location;
     }
 
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     @Override
     public String toString() {
         return "Recognition{" +

@@ -10,6 +10,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class ObjectDetector {
@@ -70,10 +71,12 @@ public class ObjectDetector {
     public List<Recognition> recognizeImage(BufferedImage image) {
 
         List<Recognition> recognitions = detector.recognizeImage(image);
+        final AtomicInteger i = new AtomicInteger(0);
         recognitions = recognitions.
                 stream().
                 filter(r -> r.getConfidence() >= minConfidence).
                 map(r -> {
+                    r.setUuid(Integer.toString(i.incrementAndGet()));
                     r.savePixels(ImageUtil.BufferedImage2Mat(image), cropSize);
                     r.saveFeature(ImageUtil.BufferedImage2Mat(image), cropSize);
 //                    ImageUtil.displayImage(r.getPixels());
