@@ -20,8 +20,8 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-//        testOpenCV();
-        testTensorFlow();
+        testOpenCV();
+//        testTensorFlow();
     }
 
     private static void testTensorFlow() throws IOException {
@@ -72,11 +72,13 @@ public class Main {
         File[] listOfFiles = folder.listFiles();
 
         String prefix = StorageUtil.RECOGNITION_TAG;
+        String suffix = ".png";
 
         for (int i = 0; i < listOfFiles.length; i++) {
             if (listOfFiles[i].isFile()) {
                 String filename = listOfFiles[i].getName();
-                if (filename.contains(prefix)) {
+//                if (filename.contains(prefix)) {
+                if (filename.contains(suffix)) {
                     System.out.println(filename);
                     testFP(filename);
                     break;
@@ -135,14 +137,14 @@ public class Main {
         ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
 
         //test the influence of feature points number on matching time
-        for (int i = 100; i <= 500; i += 50) {
-            ImageFeature feature = ImageProcessor.extractORBFeatures(img, i);
-            System.out.printf("Comparing %d vs %d FPs ", feature.getSize(),feature.getSize());
-            long before=System.currentTimeMillis();
-            MatOfDMatch ms = ImageProcessor.matcheImages(feature, feature);
-            long after=System.currentTimeMillis();
-            System.out.printf("takes %.03f s\n", ((float)(after-before)/1000));
-        }
+//        for (int i = 100; i <= 500; i += 50) {
+//            ImageFeature feature = ImageProcessor.extractORBFeatures(img, i);
+//            System.out.printf("Comparing %d vs %d FPs ", feature.getSize(),feature.getSize());
+//            long before=System.currentTimeMillis();
+//            MatOfDMatch ms = ImageProcessor.matcheImages(feature, feature);
+//            long after=System.currentTimeMillis();
+//            System.out.printf("takes %.03f s\n", ((float)(after-before)/1000));
+//        }
         //display lighted image
         ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(ImageUtil.lightImage(img, 1.8f, 20)));
     }

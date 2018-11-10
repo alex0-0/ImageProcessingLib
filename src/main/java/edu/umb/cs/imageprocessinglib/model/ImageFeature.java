@@ -32,6 +32,6 @@ public class ImageFeature {
         return descriptorType;
     }
 
-    public int getSize(){return objectKeypoints.toArray().length;}
+    public int getSize(){return objectKeypoints.rows();}
 
 }

@@ -1,5 +1,6 @@
 package edu.umb.cs.imageprocessinglib.feature;
 
+import edu.umb.cs.imageprocessinglib.model.DescriptorType;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import org.opencv.core.DMatch;
 import org.opencv.core.KeyPoint;
@@ -14,10 +15,11 @@ import org.opencv.features2d.ORB;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.utils.Converters;
 import org.opencv.xfeatures2d.SURF;
+import sun.security.krb5.internal.crypto.Des;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by alex on 1/27/18.
@@ -62,12 +64,22 @@ public class FeatureDetector {
         extractORBFeatures(img, keyPoints, descriptors);
     }
 
-    private static int kDistinctThreshold    =   3;      //threshold deciding whether a feature point is robust to distortion
+    public boolean sortedUniqueFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
+        return sortedUniqueFeatures(img, keyPoints, descriptors, DescriptorType.ORB, 0);
+    }
 
-    public boolean extractDistinctFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
+    /**
+     * @param img
+     * @param keyPoints
+     * @param descriptors
+     * @param type              the descriptor type
+     * @param filterThreshold   remove feature points which has count lower than threshold
+     * @return boolean indicates whether the method is done without problem
+     */
+    public boolean sortedUniqueFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int filterThreshold) {
         ArrayList<Mat> distortedImages = distortImage(img);
-        ArrayList<MatOfKeyPoint> ListOfKeyPoints = new ArrayList<>();
-        ArrayList<Mat> ListOfDescriptors = new ArrayList<>();
+        ArrayList<MatOfKeyPoint> listOfKeyPoints = new ArrayList<>();
+        ArrayList<Mat> listOfDescriptors = new ArrayList<>();
         MatOfKeyPoint kp = new MatOfKeyPoint();
         Mat des = new Mat();
 
@@ -82,13 +94,13 @@ public class FeatureDetector {
             MatOfKeyPoint k = new MatOfKeyPoint();
             Mat d = new Mat();
             extractFeatures(distortedImages.get(i), k, d);
-            ListOfKeyPoints.add(k);
-            ListOfDescriptors.add(d);
+            listOfKeyPoints.add(k);
+            listOfDescriptors.add(d);
         }
 
         //compare key points of original image to distorted images'
         for (int i = 0; i < distortedImages.size(); i++) {
-            MatOfDMatch m = FeatureMatcher.getInstance().matchFeature(ListOfDescriptors.get(i), des, ListOfKeyPoints.get(i), kp);
+            MatOfDMatch m = FeatureMatcher.getInstance().matchFeature(listOfDescriptors.get(i), des, listOfKeyPoints.get(i), kp);
 
             //record the times that key point of original image is detected in distorted image
             List<DMatch> matches = m.toList();
@@ -102,24 +114,56 @@ public class FeatureDetector {
 
         ArrayList<KeyPoint> rKeyPoints = new ArrayList<>();     //store key points that will be return
         List<KeyPoint> tKeyPoints = kp.toList();
-        for (int i = 0; i < kp.total(); i++) {
-            if (counter.get(i) > kDistinctThreshold) {
+
+        List<List<Object>> merged =
+                IntStream.range(0, counter.size())
+                        .mapToObj(i -> Arrays.asList((Object) tKeyPoints.get(i), counter.get(i)))
+                        .collect(Collectors.toList());
+
+        merged.sort(new Comparator<List<Object>>() {
+            @Override
+            public int compare(List<Object> o1, List<Object> o2) {
+                if ((Integer) o1.get(1) > (Integer)o2.get(1))
+                    return -1;
+                else if ((Integer) o1.get(1) < (Integer)o2.get(1))
+                    return 1;
+                else return 0;
+            }
+        });
+
+        //remove feature points which appeared less than filterThreshold
+        for (int i = 0; i < merged.size(); i++) {
+            if ((Integer)merged.get(i).get(1) > filterThreshold) {
                 rKeyPoints.add(tKeyPoints.get(i));
             }
         }
+
         keyPoints.fromList(rKeyPoints);
-        surf.compute(img, keyPoints, descriptors);
+        if (type == DescriptorType.SURF)
+            surf.compute(img, keyPoints, descriptors);
+        if (type == DescriptorType.ORB)
+            orb.compute(img, keyPoints, descriptors);
 
         //release resources before return
         for (int i = 0; i < distortedImages.size(); i++) {
             distortedImages.get(i).release();
-            ListOfDescriptors.get(i).release();
-            ListOfKeyPoints.get(i).release();
+            listOfDescriptors.get(i).release();
+            listOfKeyPoints.get(i).release();
         }
         kp.release();
         des.release();
 
         return true;
+    }
+
+    private static int kDistinctThreshold    =   3;      //threshold deciding whether a feature point is robust to distortion
+
+    public boolean extractDistinctFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
+       return extractDistinctFeatures(img, keyPoints, descriptors, DescriptorType.ORB);
+    }
+
+    public boolean extractDistinctFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type) {
+        return sortedUniqueFeatures(img, keyPoints, descriptors, type, kDistinctThreshold);
     }
 
     /**
