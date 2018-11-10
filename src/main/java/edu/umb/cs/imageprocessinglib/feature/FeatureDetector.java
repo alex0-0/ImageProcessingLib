@@ -15,7 +15,6 @@ import org.opencv.features2d.ORB;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.utils.Converters;
 import org.opencv.xfeatures2d.SURF;
-import sun.security.krb5.internal.crypto.Des;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -64,8 +63,8 @@ public class FeatureDetector {
         extractORBFeatures(img, keyPoints, descriptors);
     }
 
-    public boolean sortedUniqueFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
-        return sortedUniqueFeatures(img, keyPoints, descriptors, DescriptorType.ORB, 0);
+    public boolean sortedRobustFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
+        return sortedRobustFeatures(img, keyPoints, descriptors, DescriptorType.ORB, 0);
     }
 
     /**
@@ -76,7 +75,7 @@ public class FeatureDetector {
      * @param filterThreshold   remove feature points which has count lower than threshold
      * @return boolean indicates whether the method is done without problem
      */
-    public boolean sortedUniqueFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int filterThreshold) {
+    public boolean sortedRobustFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int filterThreshold) {
         ArrayList<Mat> distortedImages = distortImage(img);
         ArrayList<MatOfKeyPoint> listOfKeyPoints = new ArrayList<>();
         ArrayList<Mat> listOfDescriptors = new ArrayList<>();
@@ -163,7 +162,7 @@ public class FeatureDetector {
     }
 
     public boolean extractDistinctFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type) {
-        return sortedUniqueFeatures(img, keyPoints, descriptors, type, kDistinctThreshold);
+        return sortedRobustFeatures(img, keyPoints, descriptors, type, kDistinctThreshold);
     }
 
     /**
