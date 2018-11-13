@@ -205,7 +205,8 @@ public class TensorFlowYoloDetector implements Classifier {
                         new BoxPosition((float) (boundingBox.getX() - boundingBox.getWidth() / 2),
                                 (float) (boundingBox.getY() - boundingBox.getHeight() / 2),
                                 (float) boundingBox.getWidth(),
-                                (float) boundingBox.getHeight())));
+                                (float) boundingBox.getHeight()),
+                        inputSize));
             }
         }
     }

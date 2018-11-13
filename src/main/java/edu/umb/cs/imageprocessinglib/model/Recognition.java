@@ -27,15 +27,21 @@ public final class Recognition implements Serializable {
     private final String title;
     private final Float confidence;
     private BoxPosition location;
+    private int modelSize;
 //    private Mat img=null;
 
     public Recognition(final Integer id, final String title,
-                       final Float confidence, final BoxPosition location) {
+                       final Float confidence, final BoxPosition location, final int modelSize) {
         this.id = id;
         this.title = title;
         this.confidence = confidence;
         this.location = location;
+        this.modelSize = modelSize;
         uuid = UUID.randomUUID().toString();
+    }
+
+    public int getModelSize() {
+        return modelSize;
     }
 
     public Integer getId() {

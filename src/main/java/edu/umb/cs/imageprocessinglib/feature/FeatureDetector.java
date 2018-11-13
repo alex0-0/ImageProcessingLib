@@ -236,7 +236,7 @@ public class FeatureDetector {
         target.add(new Point(0, image.rows()));
 
         for (int i = 0; i < kNumOfPerspectives/2; i++) {
-            List<Point> corners = new ArrayList<Point>();
+            List<Point> corners = new ArrayList<>();
 //            corners.add(new Point(image.cols()/5, image.rows()/5));
 //            corners.add(new Point(image.cols(), image.rows()/5));
 //            corners.add(new Point(image.cols()*3/4, image.rows()*3/4));

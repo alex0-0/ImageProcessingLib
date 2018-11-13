@@ -113,7 +113,8 @@ public class TensorFlowObjectDetectionAPIModel implements Classifier {
                         new BoxPosition(boxes[i][1] * inputSize,
                                 boxes[i][0] * inputSize,
                                 (boxes[i][3] - boxes[i][1]) * inputSize,
-                                (boxes[i][2] - boxes[i][0]) * inputSize));
+                                (boxes[i][2] - boxes[i][0]) * inputSize),
+                        inputSize);
                 pq.add(r);
             }
             final ArrayList<Recognition> recognitions = new ArrayList<Recognition>();
