@@ -8,6 +8,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import javax.imageio.ImageIO;
@@ -102,6 +103,11 @@ public class ImageUtil {
         return img;
     }
 
+    static public Mat loadMatImage(String file){
+        Imgcodecs imageCodecs = new Imgcodecs();
+        return imageCodecs.imread(file);
+    }
+
     public static BufferedImage createImageFromBytes(final byte[] imageData) {
         ByteArrayInputStream bais = new ByteArrayInputStream(imageData);
         try {
@@ -143,11 +149,19 @@ public class ImageUtil {
     }
 
     //display image
-    public static void displayImage(Image img) {
-        ImageIcon icon=new ImageIcon(img);
+    public static void displayImage(BufferedImage img) {
+        Toolkit toolkit =  Toolkit.getDefaultToolkit ();
+        Dimension dim = toolkit.getScreenSize();
+        Image image = img;
+        if (img.getHeight() > dim.height || img.getWidth() > dim.width) {
+            float scale = Math.min((float)dim.height/img.getHeight(), (float)dim.width/img.getWidth());
+            image = img.getScaledInstance((int)(img.getWidth()*scale), (int)(img.getHeight()*scale),
+                    Image.SCALE_SMOOTH);
+        }
+        ImageIcon icon=new ImageIcon(image);
         JFrame frame=new JFrame();
         frame.setLayout(new FlowLayout());
-        frame.setSize(img.getWidth(null)+50, img.getHeight(null)+50);
+        frame.setSize(image.getWidth(null)+50, image.getHeight(null)+50);
         JLabel lbl=new JLabel();
         lbl.setIcon(icon);
         frame.add(lbl);

@@ -4,12 +4,20 @@ import edu.umb.cs.imageprocessinglib.feature.FeatureDetector;
 import edu.umb.cs.imageprocessinglib.feature.FeatureMatcher;
 import edu.umb.cs.imageprocessinglib.model.DescriptorType;
 import edu.umb.cs.imageprocessinglib.model.ImageFeature;
+import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.imgcodecs.Imgcodecs;
 
+import java.awt.image.BufferedImage;
+
 public class ImageProcessor {
+
+    static public ImageFeature extractDistinctFeatures(BufferedImage img) {
+        Mat mat = ImageUtil.BufferedImage2Mat(img);
+        return extractDistinctFeatures(mat);
+    }
 
     /*
     Extract image feature points
@@ -83,10 +91,5 @@ public class ImageProcessor {
 //        feature tIF = extractFeatures(temImg);
 //        return matcheImages(qIF, tIF);
 //    }
-
-    static public Mat loadImage(String file){
-        Imgcodecs imageCodecs = new Imgcodecs();
-        return imageCodecs.imread(file);
-    }
 }
 
