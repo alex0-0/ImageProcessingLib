@@ -19,6 +19,17 @@ public class ImageProcessor {
         return extractDistinctFeatures(mat);
     }
 
+    static public ImageFeature extractDistinctFeatures(Mat img, int num) {
+        return extractDistinctFeatures(img, num, DescriptorType.ORB);
+    }
+
+    static public ImageFeature extractDistinctFeatures(Mat img, int num, DescriptorType type) {
+        MatOfKeyPoint kps = new MatOfKeyPoint();
+        Mat des = new Mat();
+        FeatureDetector.getInstance().extractDistinctFeatures(img, kps, des, type, num);
+        return new ImageFeature(kps, des, type);
+    }
+
     /*
     Extract image feature points
      */
@@ -84,6 +95,17 @@ public class ImageProcessor {
         ImageFeature qIF = extractFeatures(queryImg);
         ImageFeature tIF = extractFeatures(temImg);
         return matcheImages(qIF, tIF);
+    }
+
+    /*
+    Match two images
+     */
+    static public MatOfDMatch BFMatcheImages(ImageFeature qIF, ImageFeature tIF) {
+        if (qIF.getDescriptorType() != tIF.getDescriptorType()) {
+            System.out.printf("Can't match different feature descriptor types");
+            return null;
+        }
+        return FeatureMatcher.getInstance().BFMatchFeature(qIF.getDescriptors(), tIF.getDescriptors(), qIF.getDescriptorType());
     }
 
 //    static public MatOfDMatch matcheImages(Bitmap queryImg, Bitmap temImg) {

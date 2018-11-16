@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
  */
 
 public class FeatureDetector {
-    private static final int        kMaxFeatures = 200;
+    private static final int        kMaxFeatures = 500;
 
     private FastFeatureDetector     FAST;
     private SURF surf;
@@ -47,7 +47,7 @@ public class FeatureDetector {
         FAST = FastFeatureDetector.create();
         surf = SURF.create();
         surf.setHessianThreshold(400);
-        orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
+        orb = ORB.create(kMaxFeatures, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
     }
 
     public void extractORBFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
@@ -59,12 +59,23 @@ public class FeatureDetector {
         surf.detectAndCompute(img, new Mat(), keyPoints, descriptors);
 
     }
+
+    public void extractFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type) {
+        switch (type) {
+            case SURF:
+                extractSurfFeatures(img, keyPoints, descriptors);
+            case ORB:
+            default:
+                extractORBFeatures(img, keyPoints, descriptors);
+        }
+    }
+
     public void extractFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
         extractORBFeatures(img, keyPoints, descriptors);
     }
 
     public boolean sortedRobustFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
-        return sortedRobustFeatures(img, keyPoints, descriptors, DescriptorType.ORB, 0);
+        return sortedRobustFeatures(img, keyPoints, descriptors, DescriptorType.ORB, 0, kMaxFeatures);
     }
 
     /**
@@ -73,9 +84,10 @@ public class FeatureDetector {
      * @param descriptors
      * @param type              the descriptor type
      * @param filterThreshold   remove feature points which has count lower than threshold
+     * @param num               the number limit for returning key points
      * @return boolean indicates whether the method is done without problem
      */
-    public boolean sortedRobustFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int filterThreshold) {
+    public boolean sortedRobustFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int filterThreshold, int num) {
         ArrayList<Mat> distortedImages = distortImage(img);
         ArrayList<MatOfKeyPoint> listOfKeyPoints = new ArrayList<>();
         ArrayList<Mat> listOfDescriptors = new ArrayList<>();
@@ -83,7 +95,7 @@ public class FeatureDetector {
         Mat des = new Mat();
 
         //calculate original image's key points and descriptors
-        extractFeatures(img, kp, des);
+        extractFeatures(img, kp, des, type);
 
         //record the number of images to which the key point get matched
         ArrayList<Integer> counter = new ArrayList<>(Collections.nCopies((int)kp.total(), 0));
@@ -92,14 +104,14 @@ public class FeatureDetector {
         for (int i = 0; i < distortedImages.size(); i++) {
             MatOfKeyPoint k = new MatOfKeyPoint();
             Mat d = new Mat();
-            extractFeatures(distortedImages.get(i), k, d);
+            extractFeatures(distortedImages.get(i), k, d, type);
             listOfKeyPoints.add(k);
             listOfDescriptors.add(d);
         }
 
         //compare key points of original image to distorted images'
         for (int i = 0; i < distortedImages.size(); i++) {
-            MatOfDMatch m = FeatureMatcher.getInstance().matchFeature(listOfDescriptors.get(i), des, listOfKeyPoints.get(i), kp);
+            MatOfDMatch m = FeatureMatcher.getInstance().matchFeature(listOfDescriptors.get(i), des, listOfKeyPoints.get(i), kp, type);
 
             //record the times that key point of original image is detected in distorted image
             List<DMatch> matches = m.toList();
@@ -111,14 +123,16 @@ public class FeatureDetector {
             }
         }
 
-        ArrayList<KeyPoint> rKeyPoints = new ArrayList<>();     //store key points that will be return
+        List<KeyPoint> rKeyPoints = new ArrayList<>();     //store key points that will be return
         List<KeyPoint> tKeyPoints = kp.toList();
 
+        //create a list containing keypoints list and counter list
         List<List<Object>> merged =
                 IntStream.range(0, counter.size())
                         .mapToObj(i -> Arrays.asList((Object) tKeyPoints.get(i), counter.get(i)))
                         .collect(Collectors.toList());
 
+        //descending order sort by counter
         merged.sort(new Comparator<List<Object>>() {
             @Override
             public int compare(List<Object> o1, List<Object> o2) {
@@ -136,6 +150,8 @@ public class FeatureDetector {
                 rKeyPoints.add(tKeyPoints.get(i));
             }
         }
+        if (rKeyPoints.size() > num)
+            rKeyPoints = rKeyPoints.subList(0, num);
 
         keyPoints.fromList(rKeyPoints);
         if (type == DescriptorType.SURF)
@@ -157,12 +173,20 @@ public class FeatureDetector {
 
     private static int kDistinctThreshold    =   3;      //threshold deciding whether a feature point is robust to distortion
 
+    public boolean extractDistinctFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, int num) {
+        return extractDistinctFeatures(img, keyPoints, descriptors, DescriptorType.ORB, num);
+    }
+
     public boolean extractDistinctFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
        return extractDistinctFeatures(img, keyPoints, descriptors, DescriptorType.ORB);
     }
 
+    public boolean extractDistinctFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int num) {
+        return sortedRobustFeatures(img, keyPoints, descriptors, type, kDistinctThreshold, num);
+    }
+
     public boolean extractDistinctFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type) {
-        return sortedRobustFeatures(img, keyPoints, descriptors, type, kDistinctThreshold);
+        return sortedRobustFeatures(img, keyPoints, descriptors, type, kDistinctThreshold, kMaxFeatures);
     }
 
     /**

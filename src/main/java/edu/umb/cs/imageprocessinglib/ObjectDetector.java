@@ -63,7 +63,7 @@ public class ObjectDetector {
     }
 
     public List<Recognition> recognizeImage(String imagePath) throws IOException {
-        BufferedImage bImg = ImageIO.read(getClass().getResource(imagePath));
+        BufferedImage bImg = ImageUtil.loadImage(imagePath);
         List<Recognition> recognitions = recognizeImage(bImg);
         return recognitions;
     }

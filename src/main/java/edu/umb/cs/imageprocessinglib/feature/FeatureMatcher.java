@@ -50,7 +50,7 @@ public class FeatureMatcher {
         BFMatcher m;
         switch (type) {
             case SURF:
-                m = BFMatcher.create(DescriptorMatcher.BRUTEFORCE_SL2, false);
+                m = BFMatcher.create(DescriptorMatcher.BRUTEFORCE, false);
                 break;
             case ORB:
             default:

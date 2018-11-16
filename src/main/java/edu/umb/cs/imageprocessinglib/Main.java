@@ -1,14 +1,12 @@
 package edu.umb.cs.imageprocessinglib;
 
 import edu.umb.cs.imageprocessinglib.feature.FeatureStorage;
+import edu.umb.cs.imageprocessinglib.model.DescriptorType;
 import edu.umb.cs.imageprocessinglib.model.ImageFeature;
 import edu.umb.cs.imageprocessinglib.model.Recognition;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import edu.umb.cs.imageprocessinglib.util.StorageUtil;
-import org.opencv.core.Core;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfDMatch;
-import org.opencv.core.MatOfKeyPoint;
+import org.opencv.core.*;
 import org.opencv.features2d.Features2d;
 
 import java.awt.image.BufferedImage;
@@ -20,9 +18,64 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        testOpenCV();
+//        testOpenCV();
 //        testTensorFlow();
+        testRobustFeature();
+//        testTFRobustFeature();
     }
+
+    private static void testRobustFeature() throws IOException {
+        String image_1 = "src/main/resources/image/Vegeta_1.png";
+        String image_2 = "src/main/resources/image/Vegeta_2.png";
+        Mat img = ImageUtil.loadMatImage(image_1);
+        Mat testImg = ImageUtil.loadMatImage(image_2);
+        ImageFeature templateF = ImageProcessor.extractDistinctFeatures(img, 100, DescriptorType.ORB);
+        ImageFeature testF = ImageProcessor.extractORBFeatures(testImg);
+        System.out.printf("Comparing %d vs %d FPs ", templateF.getSize(), testF.getSize());
+        MatOfDMatch matches = ImageProcessor.matcheImages(templateF, testF);
+
+//        Features2d.drawKeypoints(img, templateF.getObjectKeypoints(), img, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);
+//        Features2d.drawKeypoints(testImg, testF.getObjectKeypoints(), testImg, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);
+        System.out.printf("Match number: %d, Precision: %f\n", matches.total(), (float)matches.total()/ templateF.getSize());
+        //display matches
+        Mat display = new Mat();
+        Features2d.drawMatches(img, templateF.getObjectKeypoints(), testImg, testF.getObjectKeypoints(), matches, display);
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(img));
+//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(testImg));
+
+    }
+
+    private static void testTFRobustFeature() throws IOException {
+        //match TensorFlow cropped image
+        String image_2 = "src/main/resources/image/test.jpg";
+        String image_1 = "src/main/resources/image/test_10.jpg";
+        ObjectDetector objectDetector = new ObjectDetector();
+        objectDetector.init();
+        List<Recognition> r1 = objectDetector.recognizeImage(image_1);
+        List<Recognition> r2 = objectDetector.recognizeImage(image_2);
+        for (Recognition r : r1) {
+            for (Recognition rt : r2) {
+                if (r.getTitle().equals(rt.getTitle())) {
+                    Mat img = r.loadPixels();
+                    Mat testImg = rt.loadPixels();
+                    ImageFeature templateF = ImageProcessor.extractDistinctFeatures(img, 100, DescriptorType.ORB);
+                    ImageFeature testF = ImageProcessor.extractORBFeatures(testImg);
+                    System.out.printf("Comparing %d vs %d FPs ", templateF.getSize(), testF.getSize());
+                    MatOfDMatch matches = ImageProcessor.BFMatcheImages(templateF, testF);
+
+                    Features2d.drawKeypoints(img, templateF.getObjectKeypoints(), img, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);
+//        Features2d.drawKeypoints(testImg, testF.getObjectKeypoints(), testImg, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);
+                    System.out.printf("Match number: %d, Precision: %f\n", matches.total(), (float)matches.total()/ templateF.getSize());
+                    //display matches
+                    Mat display = new Mat();
+                    Features2d.drawMatches(img, templateF.getObjectKeypoints(), testImg, testF.getObjectKeypoints(), matches, display);
+                    ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+                }
+            }
+        }
+    }
+
 
     private static void testTensorFlow() throws IOException {
 //      String IMAGE = "/image/cow-and-bird.jpg";
