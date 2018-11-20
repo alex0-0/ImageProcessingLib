@@ -79,6 +79,55 @@ public class FeatureDetector {
     }
 
     /**
+     * extract feature points of images as well as its distorted images
+     * @return  a list of list of integers, root list has the same size as original image features
+     *          each sub-list, supposing its index is A_index, corresponds to each feature, supposing it's A_feature, in original image
+     *          the integer in A_index sub-list stands for the index of distorted image which can find A_feature.
+     */
+    public ArrayList<ArrayList<Integer>> trackFeatures(
+            Mat img,
+            List<Mat> distortedImages,
+            MatOfKeyPoint oriKPs,
+            Mat oriDes,
+            List<MatOfKeyPoint> distortedKPs,
+            List<Mat> distortedDes,
+            List<MatOfDMatch> distortedMatches,
+            DescriptorType type) {
+
+        //calculate original image's key points and descriptors
+        extractFeatures(img, oriKPs, oriDes, type);
+
+        //record the index of images to which the key point get matched
+        ArrayList<ArrayList<Integer>> tracker = new ArrayList<>();
+        for (int i = 0; i < oriDes.rows(); i++)
+            tracker.add(new ArrayList<>());
+
+        //calculate key points and descriptors of distorted images
+        for (int i = 0; i < distortedImages.size(); i++) {
+            MatOfKeyPoint k = new MatOfKeyPoint();
+            Mat d = new Mat();
+            extractFeatures(distortedImages.get(i), k, d, type);
+            distortedKPs.add(k);
+            distortedDes.add(d);
+        }
+
+        //match key points of original image to distorted images'
+        for (int i = 0; i < distortedImages.size(); i++) {
+            MatOfDMatch m = FeatureMatcher.getInstance().matchFeature(distortedDes.get(i), oriDes, distortedKPs.get(i), oriKPs, type);
+//            ArrayList<Integer> c = new ArrayList<>();
+
+            //record the times that key point of original image is detected in distorted image
+            List<DMatch> matches = m.toList();
+            for (int d = 0; d < matches.size(); d++) {
+                int index = matches.get(d).trainIdx;
+                tracker.get(index).add(i);
+            }
+            distortedMatches.add(m);
+        }
+        return tracker;
+    }
+
+    /**
      * @param img
      * @param keyPoints
      * @param descriptors
@@ -93,43 +142,16 @@ public class FeatureDetector {
         ArrayList<Mat> listOfDescriptors = new ArrayList<>();
         MatOfKeyPoint kp = new MatOfKeyPoint();
         Mat des = new Mat();
-
-        //calculate original image's key points and descriptors
-        extractFeatures(img, kp, des, type);
-
-        //record the number of images to which the key point get matched
-        ArrayList<Integer> counter = new ArrayList<>(Collections.nCopies((int)kp.total(), 0));
-
-        //calculate key points and descriptors of distorted images
-        for (int i = 0; i < distortedImages.size(); i++) {
-            MatOfKeyPoint k = new MatOfKeyPoint();
-            Mat d = new Mat();
-            extractFeatures(distortedImages.get(i), k, d, type);
-            listOfKeyPoints.add(k);
-            listOfDescriptors.add(d);
-        }
-
-        //compare key points of original image to distorted images'
-        for (int i = 0; i < distortedImages.size(); i++) {
-            MatOfDMatch m = FeatureMatcher.getInstance().matchFeature(listOfDescriptors.get(i), des, listOfKeyPoints.get(i), kp, type);
-
-            //record the times that key point of original image is detected in distorted image
-            List<DMatch> matches = m.toList();
-            for (int d = 0; d < matches.size(); d++) {
-                int index = matches.get(d).trainIdx;
-                int count = counter.get(index);
-                count++;
-                counter.set(index, count);
-            }
-        }
+        ArrayList<MatOfDMatch> listOfMatches = new ArrayList<>();
+        List<ArrayList<Integer>> tracker = trackFeatures(img, distortedImages, kp, des, listOfKeyPoints, listOfDescriptors, listOfMatches, type);
 
         List<KeyPoint> rKeyPoints = new ArrayList<>();     //store key points that will be return
         List<KeyPoint> tKeyPoints = kp.toList();
 
         //create a list containing keypoints list and counter list
         List<List<Object>> merged =
-                IntStream.range(0, counter.size())
-                        .mapToObj(i -> Arrays.asList((Object) tKeyPoints.get(i), counter.get(i)))
+                IntStream.range(0, tracker.size())
+                        .mapToObj(i -> Arrays.asList((Object) tKeyPoints.get(i), tracker.get(i).size()))
                         .collect(Collectors.toList());
 
         //descending order sort by counter
