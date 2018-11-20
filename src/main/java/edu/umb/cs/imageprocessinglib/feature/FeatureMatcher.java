@@ -1,6 +1,8 @@
 package edu.umb.cs.imageprocessinglib.feature;
 
+import edu.umb.cs.imageprocessinglib.ImageProcessor;
 import edu.umb.cs.imageprocessinglib.model.DescriptorType;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.DMatch;
 import org.opencv.core.KeyPoint;
@@ -134,6 +136,91 @@ public class FeatureMatcher {
         }
         return symMatches;
     }
+
+
+
+    public MatOfDMatch myMatchFeature(Mat queryDescriptor,
+                                      Mat templateDescriptor,
+                                      MatOfKeyPoint queryKeyPoints,
+                                      MatOfKeyPoint templateKeyPoints,
+                                      DescriptorType dType,
+                                      SimpleRegression rx,
+                                      SimpleRegression ry) {
+//        MatOfDMatch matches = new MatOfDMatch();
+//        matcher.match(queryDescriptor, templateDescriptor, matches);       //k(final parameter) set to 1 will do crosscheck
+//        return matches;
+        DescriptorMatcher m = matcher;
+
+        if (dType != descriptorType) {
+            m = createMatcher(dType);
+        }
+
+        ArrayList<MatOfDMatch> matches1 = new ArrayList<>();
+        ArrayList<MatOfDMatch>  matches2 = new ArrayList<>();
+
+        m.knnMatch(queryDescriptor, templateDescriptor, matches1, 5);       //k(final parameter) set to 1 will do crosscheck
+        m.knnMatch(templateDescriptor, queryDescriptor, matches2, 5);
+
+        ArrayList<DMatch> retList=new ArrayList<DMatch>();
+        double th_distance=500, th_pos=20;
+        for (int i = 0; i < matches1.size(); i++) {
+            MatOfDMatch matchIterator = matches1.get(i);
+            DMatch[] dMatches=matchIterator.toArray();
+            for(int j=0;j<dMatches.length;j++){
+                if(dMatches[j].distance>th_distance) continue;
+                KeyPoint qkp= ImageProcessor.findKeyPoint(queryKeyPoints, dMatches[j].queryIdx);
+                KeyPoint tkp= ImageProcessor.findKeyPoint(templateKeyPoints, dMatches[j].trainIdx);
+                double ex=qkp.pt.x*rx.getSlope()+rx.getIntercept();
+                double ey=qkp.pt.y*ry.getSlope()+ry.getIntercept();
+
+                System.out.printf("Q:%d, T:%d, dist:%.02f\n",dMatches[j].queryIdx,dMatches[j].trainIdx,dMatches[j].distance);
+                System.out.printf("qx:%.02f, qy:%.02f\t tx:%.02f, ty:%.02f\t ex:%.02f, ey:%.02f\n",
+                        qkp.pt.x,qkp.pt.y,tkp.pt.x, tkp.pt.y, ex,ey);
+
+                if((Math.abs(ex-tkp.pt.x)<th_pos)&&Math.abs(ey-tkp.pt.y)<th_pos){
+                    retList.add(dMatches[j]);
+                    System.out.println("added");
+                    break;
+                }
+            }
+        }
+
+
+        for (int i = 0; i < matches1.size(); i++) {
+            matches1.get(i).release();
+        }
+
+        for (int i = 0; i < matches2.size(); i++) {
+            matches2.get(i).release();
+        }
+
+        MatOfDMatch ret=new MatOfDMatch();
+        ret.fromList(retList);
+        return ret;
+        /*
+        ratioTest(matches1);
+        ratioTest(matches2);
+
+        MatOfDMatch symMatches = symmetryTest(matches1, matches2);
+        MatOfDMatch ransacMatches = new MatOfDMatch();
+
+        //release resources
+        for (int i = 0; i < matches1.size(); i++) {
+            matches1.get(i).release();
+        }
+        for (int i = 0; i < matches2.size(); i++) {
+            matches2.get(i).release();
+        }
+
+        if (symMatches.total() > 20) {
+            ransacTest(symMatches, queryKeyPoints, templateKeyPoints, ransacMatches);
+            //release resources
+            symMatches.release();
+            return ransacMatches;
+        }
+        return symMatches;*/
+    }
+
 
 //if the two best matches are relatively close in distance,
 //then there exists a possibility that we make an error if we select one or the other.

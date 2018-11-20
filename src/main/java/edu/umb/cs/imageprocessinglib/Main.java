@@ -6,6 +6,7 @@ import edu.umb.cs.imageprocessinglib.model.ImageFeature;
 import edu.umb.cs.imageprocessinglib.model.Recognition;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import edu.umb.cs.imageprocessinglib.util.StorageUtil;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.opencv.core.*;
 import org.opencv.features2d.Features2d;
 
@@ -34,6 +35,26 @@ public class Main {
         System.out.printf("Comparing %d vs %d FPs ", templateF.getSize(), testF.getSize());
         MatOfDMatch matches = ImageProcessor.matcheImages(templateF, testF);
 
+
+        SimpleRegression rx=new SimpleRegression();
+        SimpleRegression ry=new SimpleRegression();
+
+        DMatch[] dMatches=matches.toArray();
+        for(int i=0;i<dMatches.length;i++){
+            DMatch tmpd=dMatches[i];
+            KeyPoint kp1=ImageProcessor.findKeyPoint(templateF, tmpd.queryIdx);
+            KeyPoint kp2=ImageProcessor.findKeyPoint(testF, tmpd.trainIdx);
+
+            System.out.printf("x:%.02f, y:%.02f \t x:%.02f, y:%.02f \t dist:%.02f\n",kp1.pt.x, kp1.pt.y, kp2.pt.x, kp2.pt.y, tmpd.distance);
+            rx.addData(kp1.pt.x, kp2.pt.x);
+            ry.addData(kp1.pt.y, kp2.pt.y);
+        }
+        System.out.println();
+
+        MatOfDMatch mymatches = ImageProcessor.myMatcheImages(templateF, testF, rx, ry);
+
+
+
 //        Features2d.drawKeypoints(img, templateF.getObjectKeypoints(), img, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);
 //        Features2d.drawKeypoints(testImg, testF.getObjectKeypoints(), testImg, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);
         System.out.printf("Match number: %d, Precision: %f\n", matches.total(), (float)matches.total()/ templateF.getSize());
@@ -44,7 +65,16 @@ public class Main {
 //        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(img));
 //        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(testImg));
 
+
+        System.out.printf("Match number: %d, Precision: %f\n", mymatches.total(), (float)mymatches.total()/ templateF.getSize());
+        //display matches
+        Mat display1 = new Mat();
+        Features2d.drawMatches(img, templateF.getObjectKeypoints(), testImg, testF.getObjectKeypoints(), mymatches, display1);
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display1));
+
     }
+
+
 
     private static void testTFRobustFeature() throws IOException {
         //match TensorFlow cropped image

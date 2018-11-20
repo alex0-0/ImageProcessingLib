@@ -5,6 +5,8 @@ import edu.umb.cs.imageprocessinglib.feature.FeatureMatcher;
 import edu.umb.cs.imageprocessinglib.model.DescriptorType;
 import edu.umb.cs.imageprocessinglib.model.ImageFeature;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
@@ -91,6 +93,16 @@ public class ImageProcessor {
 //        return FeatureMatcher.getInstance().BFMatchFeature(qIF.getDescriptors(), tIF.getDescriptors());
     }
 
+    static public MatOfDMatch myMatcheImages(ImageFeature qIF, ImageFeature tIF, SimpleRegression rx, SimpleRegression ry) {
+        if (qIF.getDescriptorType() != tIF.getDescriptorType()) {
+            System.out.printf("Can't match different feature descriptor types");
+            return null;
+        }
+        return FeatureMatcher.getInstance().myMatchFeature(qIF.getDescriptors(), tIF.getDescriptors(),
+                qIF.getObjectKeypoints(), tIF.getObjectKeypoints(), qIF.getDescriptorType(), rx, ry);
+//        return FeatureMatcher.getInstance().BFMatchFeature(qIF.getDescriptors(), tIF.getDescriptors());
+    }
+
     static public MatOfDMatch matcheImages(Mat queryImg, Mat temImg) {
         ImageFeature qIF = extractFeatures(queryImg);
         ImageFeature tIF = extractFeatures(temImg);
@@ -113,5 +125,14 @@ public class ImageProcessor {
 //        feature tIF = extractFeatures(temImg);
 //        return matcheImages(qIF, tIF);
 //    }
+
+     static public KeyPoint findKeyPoint(ImageFeature templateF, int idx){
+        return findKeyPoint(templateF.getObjectKeypoints(),idx);
+    }
+
+    static public KeyPoint findKeyPoint(MatOfKeyPoint mkp, int idx){
+        KeyPoint[] kps=mkp.toArray();
+        return kps[idx];
+    }
 }
 
