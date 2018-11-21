@@ -201,8 +201,8 @@ public class ImageUtil {
     public static Mat scaleImage(Mat image, float scale) {
         Mat scaledImage = new Mat();
         Size size = image.size();
-        double rows = size.height;
-        double cols = size.width;
+        double rows = size.width;
+        double cols = size.height;
         Size newSize = new Size(rows * scale, cols * scale);
         Imgproc.resize(image, scaledImage, newSize);
         return scaledImage;
