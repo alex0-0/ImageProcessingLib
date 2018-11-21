@@ -12,33 +12,45 @@ import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
 
 import java.awt.image.BufferedImage;
+import java.util.List;
 
 public class ImageProcessor {
 
-    static public ImageFeature extractDistinctFeatures(BufferedImage img) {
+    static public ImageFeature extractRobustFeatures(BufferedImage img) {
         Mat mat = ImageUtil.BufferedImage2Mat(img);
-        return extractDistinctFeatures(mat);
+        return extractRobustFeatures(mat);
     }
 
-    static public ImageFeature extractDistinctFeatures(Mat img, int num) {
-        return extractDistinctFeatures(img, num, DescriptorType.ORB);
+    static public ImageFeature extractRobustFeatures(Mat img, int num) {
+        return extractRobustFeatures(img, num, DescriptorType.ORB);
     }
 
-    static public ImageFeature extractDistinctFeatures(Mat img, int num, DescriptorType type) {
+    static public ImageFeature extractRobustFeatures(Mat img, int num, DescriptorType type) {
         MatOfKeyPoint kps = new MatOfKeyPoint();
         Mat des = new Mat();
-        FeatureDetector featureDetector = new FeatureDetector(num);
-        featureDetector.extractDistinctFeatures(img, kps, des, type, num);
+//        FeatureDetector featureDetector = new FeatureDetector(num);
+//        featureDetector.extractRobustFeatures(img, kps, des, type, num);
+        FeatureDetector.getInstance().extractRobustFeatures(img, kps, des, type, num);
         return new ImageFeature(kps, des, type);
     }
 
     /*
     Extract image feature points
      */
-    static public ImageFeature extractDistinctFeatures(Mat img) {
+    static public ImageFeature extractRobustFeatures(Mat img, List<Mat> distortedImg, int num, DescriptorType type) {
         MatOfKeyPoint kps = new MatOfKeyPoint();
         Mat des = new Mat();
-        FeatureDetector.getInstance().extractDistinctFeatures(img, kps, des);
+        FeatureDetector.getInstance().extractRobustFeatures(img, distortedImg, kps, des, type, num);
+        return new ImageFeature(kps, des);
+    }
+
+    /*
+    Extract image feature points
+     */
+    static public ImageFeature extractRobustFeatures(Mat img) {
+        MatOfKeyPoint kps = new MatOfKeyPoint();
+        Mat des = new Mat();
+        FeatureDetector.getInstance().extractRobustFeatures(img, kps, des, DescriptorType.ORB);
         return new ImageFeature(kps, des);
     }
 
@@ -119,12 +131,6 @@ public class ImageProcessor {
         }
         return FeatureMatcher.getInstance().BFMatchFeature(qIF.getDescriptors(), tIF.getDescriptors(), qIF.getDescriptorType());
     }
-
-//    static public MatOfDMatch matchImages(Bitmap queryImg, Bitmap temImg) {
-//        feature qIF = extractFeatures(queryImg);
-//        feature tIF = extractFeatures(temImg);
-//        return matchImages(qIF, tIF);
-//    }
 
      static public KeyPoint findKeyPoint(ImageFeature templateF, int idx){
         return findKeyPoint(templateF.getObjectKeypoints(),idx);

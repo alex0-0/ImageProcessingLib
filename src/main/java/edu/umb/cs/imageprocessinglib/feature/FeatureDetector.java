@@ -70,14 +70,6 @@ public class FeatureDetector {
         }
     }
 
-    public void extractFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
-        extractORBFeatures(img, keyPoints, descriptors);
-    }
-
-    public boolean sortedRobustFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
-        return sortedRobustFeatures(img, keyPoints, descriptors, DescriptorType.ORB, 0, kMaxFeatures);
-    }
-
     /**
      * extract feature points of images as well as its distorted images
      * @return  a list of list of integers, root list has the same size as original image features
@@ -136,8 +128,7 @@ public class FeatureDetector {
      * @param num               the number limit for returning key points
      * @return boolean indicates whether the method is done without problem
      */
-    public boolean sortedRobustFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int filterThreshold, int num) {
-        ArrayList<Mat> distortedImages = distortImage(img);
+    public boolean sortedRobustFeatures(Mat img, List<Mat> distortedImages, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int filterThreshold, int num) {
         ArrayList<MatOfKeyPoint> listOfKeyPoints = new ArrayList<>();
         ArrayList<Mat> listOfDescriptors = new ArrayList<>();
         MatOfKeyPoint kp = new MatOfKeyPoint();
@@ -194,22 +185,18 @@ public class FeatureDetector {
         return true;
     }
 
-    private static int kDistinctThreshold    =   3;      //threshold deciding whether a feature point is robust to distortion
+    private static int kRobustThreshold =   3;      //threshold deciding whether a feature point is robust to distortion
 
-    public boolean extractDistinctFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, int num) {
-        return extractDistinctFeatures(img, keyPoints, descriptors, DescriptorType.ORB, num);
+    public boolean extractRobustFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int num) {
+        return sortedRobustFeatures(img, distortImage(img), keyPoints, descriptors, type, kRobustThreshold, num);
     }
 
-    public boolean extractDistinctFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors) {
-       return extractDistinctFeatures(img, keyPoints, descriptors, DescriptorType.ORB);
+    public boolean extractRobustFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type) {
+        return sortedRobustFeatures(img, distortImage(img), keyPoints, descriptors, type, kRobustThreshold, kMaxFeatures);
     }
 
-    public boolean extractDistinctFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int num) {
-        return sortedRobustFeatures(img, keyPoints, descriptors, type, kDistinctThreshold, num);
-    }
-
-    public boolean extractDistinctFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type) {
-        return sortedRobustFeatures(img, keyPoints, descriptors, type, kDistinctThreshold, kMaxFeatures);
+    public boolean extractRobustFeatures(Mat img, List<Mat> distortedImg, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int num) {
+        return sortedRobustFeatures(img, distortedImg, keyPoints, descriptors, type, kRobustThreshold, num);
     }
 
     /**
