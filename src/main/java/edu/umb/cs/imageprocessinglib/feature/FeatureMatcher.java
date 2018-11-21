@@ -157,8 +157,9 @@ public class FeatureMatcher {
         ArrayList<MatOfDMatch> matches1 = new ArrayList<>();
         ArrayList<MatOfDMatch>  matches2 = new ArrayList<>();
 
-        m.knnMatch(queryDescriptor, templateDescriptor, matches1, knnNum);      //matches will is used later
-        m.knnMatch(templateDescriptor, queryDescriptor, matches2, 2);
+        //use templateDescriptor as query to make sure the match won't exceed the number of template key points
+        m.knnMatch(templateDescriptor, queryDescriptor, matches1, knnNum);
+        m.knnMatch(queryDescriptor, templateDescriptor, matches2, 2);      //matches will is used later
 
         ratioTest(matches1);
         ratioTest(matches2);
@@ -167,7 +168,7 @@ public class FeatureMatcher {
         MatOfDMatch ransacMatches = new MatOfDMatch();
 
         if (symMatches.total() > 20) {
-            ransacTest(symMatches, queryKeyPoints, templateKeyPoints, ransacMatches);
+            ransacTest(symMatches, templateKeyPoints, queryKeyPoints, ransacMatches);
             symMatches = ransacMatches;
         }
 
@@ -180,8 +181,8 @@ public class FeatureMatcher {
         DMatch[] dMatches = symMatches.toArray();
         for(int i=0;i<dMatches.length;i++){
             DMatch tmpd=dMatches[i];
-            KeyPoint kp2 = templateKPs[tmpd.trainIdx];
-            KeyPoint kp1 = queryKPs[tmpd.queryIdx];
+            KeyPoint kp2 = templateKPs[tmpd.queryIdx];
+            KeyPoint kp1 = queryKPs[tmpd.trainIdx];
 
 //            System.out.printf("x:%.02f, y:%.02f \t x:%.02f, y:%.02f \t dist:%.02f\n",kp1.pt.x, kp1.pt.y, kp2.pt.x, kp2.pt.y, tmpd.distance);
             rx.addData(kp1.pt.x, kp2.pt.x);
@@ -190,15 +191,14 @@ public class FeatureMatcher {
 
         ArrayList<DMatch> retList = new ArrayList<>();
         for (int i = 0; i < matches1.size(); i++) {
-            MatOfDMatch matchIterator = matches1.get(i);
-            DMatch[] ms = matchIterator.toArray();
+            DMatch[] ms = matches1.get(i).toArray();
 
             int index = -1;
             double min = posThd;
             for(int j=0;j<ms.length;j++){
                 if(ms[j].distance > matchDisThd) continue;
-                KeyPoint qkp = queryKPs[ms[j].queryIdx];
-                KeyPoint tkp = templateKPs[ms[j].trainIdx];
+                KeyPoint qkp = queryKPs[ms[j].trainIdx];
+                KeyPoint tkp = templateKPs[ms[j].queryIdx];
                 double ex = qkp.pt.x*rx.getSlope() + rx.getIntercept();
                 double ey = qkp.pt.y*ry.getSlope() + ry.getIntercept();
 
@@ -213,7 +213,7 @@ public class FeatureMatcher {
                 }
             }
             if (index != -1)
-                retList.add(ms[index]);
+                retList.add(new DMatch(ms[index].trainIdx, ms[index].queryIdx, ms[index].distance));
         }
 
         for (int i = 0; i < matches1.size(); i++) {

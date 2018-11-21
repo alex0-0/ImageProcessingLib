@@ -21,8 +21,8 @@ public class Main {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 //        testOpenCV();
 //        testTensorFlow();
-        testRobustFeature();
-//        testTFRobustFeature();
+//        testRobustFeature();
+        testTFRobustFeature();
     }
 
     private static void testRobustFeature() throws IOException {
@@ -90,22 +90,24 @@ public class Main {
         List<Recognition> r2 = objectDetector.recognizeImage(image_2);
         for (Recognition r : r1) {
             for (Recognition rt : r2) {
-                if (r.getTitle().equals(rt.getTitle())) {
+//                if (r.getTitle().equals(rt.getTitle())) {
                     Mat img = r.loadPixels();
                     Mat testImg = rt.loadPixels();
+//                    ImageFeature templateF = ImageProcessor.extractORBFeatures(img, 100);
                     ImageFeature templateF = ImageProcessor.extractDistinctFeatures(img, 100, DescriptorType.ORB);
                     ImageFeature testF = ImageProcessor.extractORBFeatures(testImg);
-                    System.out.printf("Comparing %d vs %d FPs ", templateF.getSize(), testF.getSize());
-                    MatOfDMatch matches = ImageProcessor.BFMatchImages(templateF, testF);
+                    System.out.printf("Comparing %d vs %d FPs ", testF.getSize(), templateF.getSize());
+//                    MatOfDMatch matches = ImageProcessor.BFMatchImages(templateF, testF);
+                    MatOfDMatch matches = ImageProcessor.matchWithRegression(testF, templateF);
 
-                    Features2d.drawKeypoints(img, templateF.getObjectKeypoints(), img, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);
+//                    Features2d.drawKeypoints(img, templateF.getObjectKeypoints(), img, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);
 //        Features2d.drawKeypoints(testImg, testF.getObjectKeypoints(), testImg, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);
                     System.out.printf("Match number: %d, Precision: %f\n", matches.total(), (float)matches.total()/ templateF.getSize());
                     //display matches
                     Mat display = new Mat();
-                    Features2d.drawMatches(img, templateF.getObjectKeypoints(), testImg, testF.getObjectKeypoints(), matches, display);
+                    Features2d.drawMatches(testImg, testF.getObjectKeypoints(), img, templateF.getObjectKeypoints(), matches, display);
                     ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
-                }
+//                }
             }
         }
     }

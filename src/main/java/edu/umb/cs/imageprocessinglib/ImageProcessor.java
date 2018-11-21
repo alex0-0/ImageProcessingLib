@@ -27,7 +27,8 @@ public class ImageProcessor {
     static public ImageFeature extractDistinctFeatures(Mat img, int num, DescriptorType type) {
         MatOfKeyPoint kps = new MatOfKeyPoint();
         Mat des = new Mat();
-        FeatureDetector.getInstance().extractDistinctFeatures(img, kps, des, type, num);
+        FeatureDetector featureDetector = new FeatureDetector(num);
+        featureDetector.extractDistinctFeatures(img, kps, des, type, num);
         return new ImageFeature(kps, des, type);
     }
 
