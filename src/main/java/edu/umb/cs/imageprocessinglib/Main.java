@@ -6,7 +6,6 @@ import edu.umb.cs.imageprocessinglib.model.ImageFeature;
 import edu.umb.cs.imageprocessinglib.model.Recognition;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import edu.umb.cs.imageprocessinglib.util.StorageUtil;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.opencv.core.*;
 import org.opencv.features2d.Features2d;
 
@@ -21,8 +20,8 @@ public class Main {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 //        testOpenCV();
 //        testTensorFlow();
-//        testRobustFeature();
-        testTFRobustFeature();
+        testRobustFeature();
+//        testTFRobustFeature();
     }
 
     private static void testRobustFeature() throws IOException {
@@ -30,10 +29,9 @@ public class Main {
         String image_2 = "src/main/resources/image/Vegeta_2.png";
         Mat img = ImageUtil.loadMatImage(image_1);
         Mat testImg = ImageUtil.loadMatImage(image_2);
-        int k = img.rows();
-        int t = img.cols();
-//        testImg = ImageUtil.scaleImage(testImg, 1.0f);
-        ImageFeature templateF = ImageProcessor.extractDistinctFeatures(img, 100, DescriptorType.ORB);
+        testImg = ImageUtil.scaleImage(testImg, 0.5f);
+        ImageFeature templateF = ImageProcessor.extractRobustFeatures(img, 100, DescriptorType.ORB);
+//        ImageFeature templateF = ImageProcessor.extractORBFeatures(img, 100);
         ImageFeature testF = ImageProcessor.extractORBFeatures(testImg);
         System.out.printf("Comparing %d vs %d FPs ", templateF.getSize(), testF.getSize());
         MatOfDMatch matches = ImageProcessor.matchImages(testF, templateF);
@@ -93,8 +91,8 @@ public class Main {
 //                if (r.getTitle().equals(rt.getTitle())) {
                     Mat img = r.loadPixels();
                     Mat testImg = rt.loadPixels();
-//                    ImageFeature templateF = ImageProcessor.extractORBFeatures(img, 100);
-                    ImageFeature templateF = ImageProcessor.extractDistinctFeatures(img, 100, DescriptorType.ORB);
+                    ImageFeature templateF = ImageProcessor.extractORBFeatures(img, 100);
+//                    ImageFeature templateF = ImageProcessor.extractRobustFeatures(img, 100, DescriptorType.ORB);
                     ImageFeature testF = ImageProcessor.extractORBFeatures(testImg);
                     System.out.printf("Comparing %d vs %d FPs ", testF.getSize(), templateF.getSize());
 //                    MatOfDMatch matches = ImageProcessor.BFMatchImages(templateF, testF);
