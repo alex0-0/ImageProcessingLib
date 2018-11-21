@@ -4,12 +4,11 @@ package edu.umb.cs.imageprocessinglib.util;
 import edu.umb.cs.imageprocessinglib.model.BoxPosition;
 import edu.umb.cs.imageprocessinglib.model.Recognition;
 import org.apache.commons.io.IOUtils;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
+import org.opencv.core.*;
 import org.opencv.core.Point;
-import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.utils.Converters;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -219,5 +218,57 @@ public class ImageUtil {
         Mat newImage = new Mat();
         image.convertTo(newImage, -1, alpha, beta);
         return newImage;
+    }
+
+    /**
+     * Affine original image to generate a group of distorted image
+     * refer to https://stackoverflow.com/questions/10962228/whats-the-best-way-of-understanding-opencvs-warpperspective-and-warpaffine?rq=1 for more information
+     * @param image     original image
+     * @param originalPoints     original points position, at least 4 points
+     * @param targetPoints       target points position, at least 4 points
+     * @return          a image of changed perspective.
+     */
+    private Mat changeImagePerspective(Mat image, List<Point> originalPoints, List<Point> targetPoints) {
+        Mat r = new Mat();
+        Mat cornersMat = Converters.vector_Point2f_to_Mat(originalPoints);
+        Mat targetMat = Converters.vector_Point2f_to_Mat(targetPoints);
+        Mat trans = Imgproc.getPerspectiveTransform(cornersMat, targetMat);
+
+        Imgproc.warpPerspective(image, r, trans, new Size(image.cols(), image.rows()));
+        //clean resource
+        cornersMat.release();
+        targetMat.release();
+        trans.release();
+
+        return r;
+    }
+
+    /**
+     * Affine original image to generate a group of distorted image
+     * @param image     original image
+     * @param originalPoints     original points position, at least 4 points
+     * @param targetPoints       target points position, at least 4 points
+     * @return          an affined image
+     */
+    private Mat affineImage(Mat image, List<Point> originalPoints, List<Point> targetPoints) {
+        MatOfPoint2f originalMat = new MatOfPoint2f();
+        originalMat.fromList(originalPoints);
+
+        MatOfPoint2f targetMat = new MatOfPoint2f();
+        targetMat.fromList(targetPoints);
+
+        //calculate the affine transformation matrix,
+        //refer to https://stackoverflow.com/questions/22954239/given-three-points-compute-affine-transformation
+        Mat affineTransform = Imgproc.getAffineTransform(originalMat, targetMat);
+
+        Mat affine = new Mat();
+        Imgproc.warpAffine(image, affine, affineTransform, new Size(image.cols(), image.rows()));
+
+        //release resources
+        affineTransform.release();
+        targetMat.release();
+        originalMat.release();
+
+        return affine;
     }
 }

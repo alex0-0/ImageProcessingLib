@@ -12,9 +12,26 @@ import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ImageProcessor {
+
+    static public List<Mat> rotatedImage(Mat image, float stepAngle, int num) {
+        List<Mat> r = new ArrayList<>();
+        for (int i = 1; i <= num; i++) {
+            r.add(ImageUtil.rotateImage(image, (1 + i * stepAngle)));
+        }
+        return r;
+    }
+
+    static public List<Mat> scaleImage(Mat image, float stepScale, int num) {
+        List<Mat> r = new ArrayList<>();
+        for (int i = 1; i <= num; i++) {
+            r.add(ImageUtil.scaleImage(image, (1 + i * stepScale)));
+        }
+        return r;
+    }
 
     static public ImageFeature extractRobustFeatures(BufferedImage img) {
         Mat mat = ImageUtil.BufferedImage2Mat(img);
