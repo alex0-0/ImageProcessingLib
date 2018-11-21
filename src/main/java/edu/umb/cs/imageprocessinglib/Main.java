@@ -36,7 +36,7 @@ public class Main {
         ImageFeature templateF = ImageProcessor.extractDistinctFeatures(img, 100, DescriptorType.ORB);
         ImageFeature testF = ImageProcessor.extractORBFeatures(testImg);
         System.out.printf("Comparing %d vs %d FPs ", templateF.getSize(), testF.getSize());
-        MatOfDMatch matches = ImageProcessor.matchImages(templateF, testF);
+        MatOfDMatch matches = ImageProcessor.matchImages(testF, templateF);
 //        MatOfDMatch matches = ImageProcessor.matchImages(templateF, testF);
 
 
@@ -56,7 +56,7 @@ public class Main {
 //        System.out.println();
 //
 //        MatOfDMatch mymatches = ImageProcessor.myMatchImages(templateF, testF, rx, ry);
-        MatOfDMatch mymatches = ImageProcessor.matchWithRegression(templateF, testF);
+        MatOfDMatch mymatches = ImageProcessor.matchWithRegression(testF, templateF);
 
 
 
@@ -65,7 +65,7 @@ public class Main {
         System.out.printf("Match number: %d, Precision: %f\n", matches.total(), (float)matches.total()/ templateF.getSize());
         //display matches
         Mat display = new Mat();
-        Features2d.drawMatches(img, templateF.getObjectKeypoints(), testImg, testF.getObjectKeypoints(), matches, display);
+        Features2d.drawMatches(testImg, testF.getObjectKeypoints(), img, templateF.getObjectKeypoints(), matches, display);
         ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
 //        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(img));
 //        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(testImg));
@@ -74,7 +74,7 @@ public class Main {
         System.out.printf("Match number: %d, Precision: %f\n", mymatches.total(), (float)mymatches.total()/ templateF.getSize());
         //display matches
         Mat display1 = new Mat();
-        Features2d.drawMatches(img, templateF.getObjectKeypoints(), testImg, testF.getObjectKeypoints(), mymatches, display1);
+        Features2d.drawMatches(testImg, testF.getObjectKeypoints(),img, templateF.getObjectKeypoints(),  mymatches, display1);
         ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display1));
     }
 

@@ -77,7 +77,7 @@ public class ObjectDetector {
                 filter(r -> r.getConfidence() >= minConfidence).
                 map(r -> {
                     //just for test, don't wanna generate too many test files
-//                    r.setUuid(Integer.toString(i.incrementAndGet()));
+                    r.setUuid(Integer.toString(i.incrementAndGet()));
 
                     r.savePixels(ImageUtil.BufferedImage2Mat(image), cropSize);
                     r.saveFeature(ImageUtil.BufferedImage2Mat(image), cropSize);
