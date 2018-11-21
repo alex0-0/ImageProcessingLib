@@ -16,7 +16,7 @@ import java.util.UUID;
 public final class Recognition implements Serializable {
     private static String TAG = StorageUtil.RECOGNITION_TAG;
 
-    //Unique identifier for this object
+    //Unique identifier for this object, don't change it unless you know clearly what you are doing
     private String uuid;
 
     /**
@@ -70,6 +70,7 @@ public final class Recognition implements Serializable {
         this.location = location;
     }
 
+    //WARNING: change UUID may cause conflicts on file name, which may overwrite history data
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }

@@ -137,6 +137,97 @@ public class FeatureMatcher {
         return symMatches;
     }
 
+    public MatOfDMatch matchWithRegression(Mat queryDescriptor,
+                                           Mat templateDescriptor,
+                                           MatOfKeyPoint queryKeyPoints,
+                                           MatOfKeyPoint templateKeyPoints,
+                                           DescriptorType dType,
+                                           int knnNum,
+                                           int matchDisThd,
+                                           int posThd) {
+//        MatOfDMatch matches = new MatOfDMatch();
+//        matcher.match(queryDescriptor, templateDescriptor, matches);       //k(final parameter) set to 1 will do crosscheck
+//        return matches;
+        DescriptorMatcher m = matcher;
+
+        if (dType != descriptorType) {
+            m = createMatcher(dType);
+        }
+
+        ArrayList<MatOfDMatch> matches1 = new ArrayList<>();
+        ArrayList<MatOfDMatch>  matches2 = new ArrayList<>();
+
+        m.knnMatch(queryDescriptor, templateDescriptor, matches1, knnNum);      //matches will is used later
+        m.knnMatch(templateDescriptor, queryDescriptor, matches2, 2);
+
+        ratioTest(matches1);
+        ratioTest(matches2);
+
+        MatOfDMatch symMatches = symmetryTest(matches1, matches2);
+        MatOfDMatch ransacMatches = new MatOfDMatch();
+
+        if (symMatches.total() > 20) {
+            ransacTest(symMatches, queryKeyPoints, templateKeyPoints, ransacMatches);
+            symMatches = ransacMatches;
+        }
+
+        SimpleRegression rx = new SimpleRegression();
+        SimpleRegression ry = new SimpleRegression();
+
+        KeyPoint[] templateKPs = templateKeyPoints.toArray();
+        KeyPoint[] queryKPs = queryKeyPoints.toArray();
+
+        DMatch[] dMatches = symMatches.toArray();
+        for(int i=0;i<dMatches.length;i++){
+            DMatch tmpd=dMatches[i];
+            KeyPoint kp2 = templateKPs[tmpd.trainIdx];
+            KeyPoint kp1 = queryKPs[tmpd.queryIdx];
+
+//            System.out.printf("x:%.02f, y:%.02f \t x:%.02f, y:%.02f \t dist:%.02f\n",kp1.pt.x, kp1.pt.y, kp2.pt.x, kp2.pt.y, tmpd.distance);
+            rx.addData(kp1.pt.x, kp2.pt.x);
+            ry.addData(kp1.pt.y, kp2.pt.y);
+        }
+
+        ArrayList<DMatch> retList = new ArrayList<>();
+        for (int i = 0; i < matches1.size(); i++) {
+            MatOfDMatch matchIterator = matches1.get(i);
+            DMatch[] ms = matchIterator.toArray();
+
+            int index = -1;
+            double min = posThd;
+            for(int j=0;j<ms.length;j++){
+                if(ms[j].distance > matchDisThd) continue;
+                KeyPoint qkp = queryKPs[ms[j].queryIdx];
+                KeyPoint tkp = templateKPs[ms[j].trainIdx];
+                double ex = qkp.pt.x*rx.getSlope() + rx.getIntercept();
+                double ey = qkp.pt.y*ry.getSlope() + ry.getIntercept();
+
+//                System.out.printf("Q:%d, T:%d, dist:%.02f\n",ms[j].queryIdx,ms[j].trainIdx,ms[j].distance);
+//                System.out.printf("qx:%.02f, qy:%.02f\t tx:%.02f, ty:%.02f\t ex:%.02f, ey:%.02f\n",
+//                        qkp.pt.x,qkp.pt.y,tkp.pt.x, tkp.pt.y, ex,ey);
+                double diffx = Math.abs(ex-tkp.pt.x);
+                double diffy = Math.abs(ey-tkp.pt.y);
+                if( diffx < min && diffy < min){
+                    min = Math.max(diffx, diffy);
+                    index = j;
+                }
+            }
+            if (index != -1)
+                retList.add(ms[index]);
+        }
+
+        for (int i = 0; i < matches1.size(); i++) {
+            matches1.get(i).release();
+        }
+
+        for (int i = 0; i < matches2.size(); i++) {
+            matches2.get(i).release();
+        }
+
+        MatOfDMatch ret=new MatOfDMatch();
+        ret.fromList(retList);
+        return ret;
+    }
 
 
     public MatOfDMatch myMatchFeature(Mat queryDescriptor,

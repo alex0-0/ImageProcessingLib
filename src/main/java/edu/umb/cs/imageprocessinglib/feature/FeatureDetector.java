@@ -143,6 +143,7 @@ public class FeatureDetector {
         MatOfKeyPoint kp = new MatOfKeyPoint();
         Mat des = new Mat();
         ArrayList<MatOfDMatch> listOfMatches = new ArrayList<>();
+
         List<ArrayList<Integer>> tracker = trackFeatures(img, distortedImages, kp, des, listOfKeyPoints, listOfDescriptors, listOfMatches, type);
 
         List<KeyPoint> rKeyPoints = new ArrayList<>();     //store key points that will be return

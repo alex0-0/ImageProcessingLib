@@ -10,7 +10,6 @@ import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
-import org.opencv.imgcodecs.Imgcodecs;
 
 import java.awt.image.BufferedImage;
 
@@ -83,7 +82,7 @@ public class ImageProcessor {
     /*
     Match two images
      */
-    static public MatOfDMatch matcheImages(ImageFeature qIF, ImageFeature tIF) {
+    static public MatOfDMatch matchImages(ImageFeature qIF, ImageFeature tIF) {
         if (qIF.getDescriptorType() != tIF.getDescriptorType()) {
             System.out.printf("Can't match different feature descriptor types");
             return null;
@@ -93,7 +92,7 @@ public class ImageProcessor {
 //        return FeatureMatcher.getInstance().BFMatchFeature(qIF.getDescriptors(), tIF.getDescriptors());
     }
 
-    static public MatOfDMatch myMatcheImages(ImageFeature qIF, ImageFeature tIF, SimpleRegression rx, SimpleRegression ry) {
+    static public MatOfDMatch myMatchImages(ImageFeature qIF, ImageFeature tIF, SimpleRegression rx, SimpleRegression ry) {
         if (qIF.getDescriptorType() != tIF.getDescriptorType()) {
             System.out.printf("Can't match different feature descriptor types");
             return null;
@@ -103,16 +102,16 @@ public class ImageProcessor {
 //        return FeatureMatcher.getInstance().BFMatchFeature(qIF.getDescriptors(), tIF.getDescriptors());
     }
 
-    static public MatOfDMatch matcheImages(Mat queryImg, Mat temImg) {
+    static public MatOfDMatch matchImages(Mat queryImg, Mat temImg) {
         ImageFeature qIF = extractFeatures(queryImg);
         ImageFeature tIF = extractFeatures(temImg);
-        return matcheImages(qIF, tIF);
+        return matchImages(qIF, tIF);
     }
 
     /*
     Match two images
      */
-    static public MatOfDMatch BFMatcheImages(ImageFeature qIF, ImageFeature tIF) {
+    static public MatOfDMatch BFMatchImages(ImageFeature qIF, ImageFeature tIF) {
         if (qIF.getDescriptorType() != tIF.getDescriptorType()) {
             System.out.printf("Can't match different feature descriptor types");
             return null;
@@ -120,10 +119,10 @@ public class ImageProcessor {
         return FeatureMatcher.getInstance().BFMatchFeature(qIF.getDescriptors(), tIF.getDescriptors(), qIF.getDescriptorType());
     }
 
-//    static public MatOfDMatch matcheImages(Bitmap queryImg, Bitmap temImg) {
+//    static public MatOfDMatch matchImages(Bitmap queryImg, Bitmap temImg) {
 //        feature qIF = extractFeatures(queryImg);
 //        feature tIF = extractFeatures(temImg);
-//        return matcheImages(qIF, tIF);
+//        return matchImages(qIF, tIF);
 //    }
 
      static public KeyPoint findKeyPoint(ImageFeature templateF, int idx){
@@ -133,6 +132,19 @@ public class ImageProcessor {
     static public KeyPoint findKeyPoint(MatOfKeyPoint mkp, int idx){
         KeyPoint[] kps=mkp.toArray();
         return kps[idx];
+    }
+
+    static public MatOfDMatch matchWithRegression(ImageFeature qIF, ImageFeature tIF, int knnNum, int matchDisThd, int posThd) {
+        if (qIF.getDescriptorType() != tIF.getDescriptorType()) {
+            System.out.printf("Can't match different feature descriptor types");
+            return null;
+        }
+        return FeatureMatcher.getInstance().matchWithRegression(qIF.getDescriptors(), tIF.getDescriptors(),
+                qIF.getObjectKeypoints(), tIF.getObjectKeypoints(), qIF.getDescriptorType(), knnNum, matchDisThd, posThd);
+    }
+
+    static public MatOfDMatch matchWithRegression(ImageFeature qIF, ImageFeature tIF) {
+        return matchWithRegression(qIF, tIF, 5, 500, 20);
     }
 }
 
