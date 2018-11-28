@@ -20,8 +20,25 @@ public class Main {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 //        testOpenCV();
 //        testTensorFlow();
-        testRobustFeature();
+//        testRobustFeature();
 //        testTFRobustFeature();
+        testDistortion();
+    }
+
+    private static void testDistortion() throws IOException {
+        String image_1 = "src/main/resources/image/Vegeta_1.png";
+        Mat img = ImageUtil.loadMatImage(image_1);
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(img));
+//        List<Mat> distortedImg = ImageProcessor.rotatedImage(img, 5f, 5);
+//        List<Mat> distortedImg = ImageProcessor.scaleImage(img, -0.1f, 5);
+//        List<Mat> distortedImg = ImageProcessor.lightImage(img, -0.1f, 5);
+        List<Mat> distortedImg = ImageProcessor.changeToLeftPerspective(img, 10f, 5);
+//        List<Mat> distortedImg = ImageProcessor.changeToRightPerspective(img, 10f, 5);
+//        List<Mat> distortedImg = ImageProcessor.changeToBottomPerspective(img, 10f, 5);
+//        List<Mat> distortedImg = ImageProcessor.changeToTopPerspective(img, 10f, 5);
+        for (Mat i : distortedImg) {
+            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(i));
+        }
     }
 
     private static void testRobustFeature() throws IOException {
@@ -29,7 +46,8 @@ public class Main {
         String image_2 = "src/main/resources/image/Vegeta_2.png";
         Mat img = ImageUtil.loadMatImage(image_1);
         Mat testImg = ImageUtil.loadMatImage(image_2);
-        testImg = ImageUtil.scaleImage(testImg, 0.5f);
+//        testImg = ImageUtil.scaleImage(testImg, 0.8f);
+//        testImg = ImageUtil.scaleImage(testImg, 1.0f);
         ImageFeature templateF = ImageProcessor.extractRobustFeatures(img, 100, DescriptorType.ORB);
 //        ImageFeature templateF = ImageProcessor.extractORBFeatures(img, 100);
         ImageFeature testF = ImageProcessor.extractORBFeatures(testImg);
@@ -91,8 +109,8 @@ public class Main {
 //                if (r.getTitle().equals(rt.getTitle())) {
                     Mat img = r.loadPixels();
                     Mat testImg = rt.loadPixels();
-                    ImageFeature templateF = ImageProcessor.extractORBFeatures(img, 100);
-//                    ImageFeature templateF = ImageProcessor.extractRobustFeatures(img, 100, DescriptorType.ORB);
+//                    ImageFeature templateF = ImageProcessor.extractORBFeatures(img, 100);
+                    ImageFeature templateF = ImageProcessor.extractRobustFeatures(img, 100, DescriptorType.ORB);
                     ImageFeature testF = ImageProcessor.extractORBFeatures(testImg);
                     System.out.printf("Comparing %d vs %d FPs ", testF.getSize(), templateF.getSize());
 //                    MatOfDMatch matches = ImageProcessor.BFMatchImages(templateF, testF);
@@ -179,7 +197,7 @@ public class Main {
         Mat img = StorageUtil.readMatFromFile(filename);
 
 //        Mat img = ImageProcessor.loadImage(file); //imageCodecs.imread(file);
-//        ImageFeature imageFeature = ImageProcessor.extractDistinctFeatures(img);
+//        ImageFeature imageFeature = ImageProcessor.extractRobustFeatures(img);
         ImageFeature imageFeature = ImageProcessor.extractFeatures(img);
 
 //        Features2d.drawKeypoints(img, imageFeature.getObjectKeypoints(), img, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);

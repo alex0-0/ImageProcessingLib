@@ -224,11 +224,11 @@ public class ImageUtil {
      * Affine original image to generate a group of distorted image
      * refer to https://stackoverflow.com/questions/10962228/whats-the-best-way-of-understanding-opencvs-warpperspective-and-warpaffine?rq=1 for more information
      * @param image     original image
-     * @param originalPoints     original points position, at least 4 points
-     * @param targetPoints       target points position, at least 4 points
+     * @param originalPoints     original points position, at least 4 points, containing left-top, right-top, right-bottom, left-bottom point
+     * @param targetPoints       target points position, at least 4 points, containing left-top, right-top, right-bottom, left-bottom point
      * @return          a image of changed perspective.
      */
-    private Mat changeImagePerspective(Mat image, List<Point> originalPoints, List<Point> targetPoints) {
+    public static Mat changeImagePerspective(Mat image, List<Point> originalPoints, List<Point> targetPoints) {
         Mat r = new Mat();
         Mat cornersMat = Converters.vector_Point2f_to_Mat(originalPoints);
         Mat targetMat = Converters.vector_Point2f_to_Mat(targetPoints);
@@ -250,7 +250,7 @@ public class ImageUtil {
      * @param targetPoints       target points position, at least 4 points
      * @return          an affined image
      */
-    private Mat affineImage(Mat image, List<Point> originalPoints, List<Point> targetPoints) {
+    public static Mat affineImage(Mat image, List<Point> originalPoints, List<Point> targetPoints) {
         MatOfPoint2f originalMat = new MatOfPoint2f();
         originalMat.fromList(originalPoints);
 

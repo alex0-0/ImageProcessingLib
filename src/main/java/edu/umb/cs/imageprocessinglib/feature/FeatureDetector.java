@@ -281,23 +281,26 @@ public class FeatureDetector {
             corners.add(new Point(image.cols() * (1 - kStepPerspective * i), image.rows() * (1 - kStepPerspective * i)));
             corners.add(new Point(image.cols() * i * kStepPerspective, image.rows() * (1 - kStepPerspective * i)));
 
-            Mat cornersMat = Converters.vector_Point2f_to_Mat(corners);
-            Mat targetMat = Converters.vector_Point2f_to_Mat(target);
-            Mat trans = Imgproc.getPerspectiveTransform(cornersMat, targetMat);
+            r.add(ImageUtil.changeImagePerspective(image, corners, target));
+            r.add(ImageUtil.changeImagePerspective(image, target, corners));
 
-            Mat proj = new Mat();
-            Imgproc.warpPerspective(image, proj, trans, new Size(image.cols(), image.rows()));
-
-            Mat revertProj = new Mat();
-            trans.release();
-            trans = Imgproc.getPerspectiveTransform(targetMat, cornersMat);
-            Imgproc.warpPerspective(image, revertProj, trans, new Size(image.cols(), image.rows()));
-
-            r.add(proj);
-            r.add(revertProj);
-
-            //release resources
-            trans.release();
+//            Mat cornersMat = Converters.vector_Point2f_to_Mat(corners);
+//            Mat targetMat = Converters.vector_Point2f_to_Mat(target);
+//            Mat trans = Imgproc.getPerspectiveTransform(cornersMat, targetMat);
+//
+//            Mat proj = new Mat();
+//            Imgproc.warpPerspective(image, proj, trans, new Size(image.cols(), image.rows()));
+//
+//            Mat revertProj = new Mat();
+//            trans.release();
+//            trans = Imgproc.getPerspectiveTransform(targetMat, cornersMat);
+//            Imgproc.warpPerspective(image, revertProj, trans, new Size(image.cols(), image.rows()));
+//
+//            r.add(proj);
+//            r.add(revertProj);
+//
+//            //release resources
+//            trans.release();
         }
 
         return r;
@@ -332,21 +335,24 @@ public class FeatureDetector {
             MatOfPoint2f targetMatA = new MatOfPoint2f();
             targetMatA.fromList(targetA);
 
+            r.add(ImageUtil.affineImage(image, original, targetA));
+            r.add(ImageUtil.affineImage(image, targetA, original));
+
             //calculate the affine transformation matrix,
             //refer to https://stackoverflow.com/questions/22954239/given-three-points-compute-affine-transformation
-            Mat affineTransformA = Imgproc.getAffineTransform(originalMat, targetMatA);
-            Mat affineTransformB = Imgproc.getAffineTransform(targetMatA, originalMat);
-
-            Mat affineA = new Mat();
-            Mat affineB = new Mat();
-            Imgproc.warpAffine(image, affineA, affineTransformA, new Size(image.cols(), image.rows()));
-            Imgproc.warpAffine(image, affineB, affineTransformB, new Size(image.cols(), image.rows()));
-            r.add(affineA);
-            r.add(affineB);
-
-            //release resources
-            affineTransformA.release();
-            affineTransformB.release();
+//            Mat affineTransformA = Imgproc.getAffineTransform(originalMat, targetMatA);
+//            Mat affineTransformB = Imgproc.getAffineTransform(targetMatA, originalMat);
+//
+//            Mat affineA = new Mat();
+//            Mat affineB = new Mat();
+//            Imgproc.warpAffine(image, affineA, affineTransformA, new Size(image.cols(), image.rows()));
+//            Imgproc.warpAffine(image, affineB, affineTransformB, new Size(image.cols(), image.rows()));
+//            r.add(affineA);
+//            r.add(affineB);
+//
+//            //release resources
+//            affineTransformA.release();
+//            affineTransformB.release();
         }
 
         originalMat.release();

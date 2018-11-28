@@ -6,10 +6,7 @@ import edu.umb.cs.imageprocessinglib.model.DescriptorType;
 import edu.umb.cs.imageprocessinglib.model.ImageFeature;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.opencv.core.KeyPoint;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfDMatch;
-import org.opencv.core.MatOfKeyPoint;
+import org.opencv.core.*;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -29,6 +26,99 @@ public class ImageProcessor {
         List<Mat> r = new ArrayList<>();
         for (int i = 1; i <= num; i++) {
             r.add(ImageUtil.scaleImage(image, (1 + i * stepScale)));
+        }
+        return r;
+    }
+
+    static public List<Mat> lightImage(Mat image, float stepLight, int num) {
+        List<Mat> r = new ArrayList<>();
+        for (int i = 1; i <= num; i++) {
+            r.add(ImageUtil.lightImage(image, 1 + stepLight * i, 0));
+        }
+        return r;
+    }
+
+    //WARNING: stepPer * num should be less than Min(image.width, image.height) and larger than 0
+    static public List<Mat> changeToRightPerspective(Mat image, float stepPer, int num) {
+        List<Mat> r = new ArrayList<>();
+
+        List<Point> originals = new ArrayList<>();
+        originals.add(new Point(0, 0));
+        originals.add(new Point(image.cols(), 0));
+        originals.add(new Point(image.cols(), image.rows()));
+        originals.add(new Point(0, image.rows()));
+        int pixelStep = Math.min(image.rows(), image.cols());
+        for (int i = 1; i <= num; i++) {
+            List<Point> corners = new ArrayList<>();
+            corners.add(new Point(stepPer*i, stepPer*i));
+            corners.add(new Point(image.cols(), 0));
+            corners.add(new Point(image.cols(), image.rows()));
+            corners.add(new Point(stepPer*i, image.rows()-stepPer*i));
+
+            r.add(ImageUtil.changeImagePerspective(image, originals, corners));
+        }
+        return r;
+    }
+
+    //WARNING: stepPer * num should be less than Min(image.width, image.height) and larger than 0
+    static public List<Mat> changeToLeftPerspective(Mat image, float stepPer, int num) {
+        List<Mat> r = new ArrayList<>();
+
+        List<Point> originals = new ArrayList<>();
+        originals.add(new Point(0, 0));
+        originals.add(new Point(image.cols(), 0));
+        originals.add(new Point(image.cols(), image.rows()));
+        originals.add(new Point(0, image.rows()));
+        for (int i = 1; i <= num; i++) {
+            List<Point> corners = new ArrayList<>();
+            corners.add(new Point(0, 0));
+            corners.add(new Point(image.cols()-i*stepPer, i*stepPer));
+            corners.add(new Point(image.cols()-i*stepPer, image.rows()-i*stepPer));
+            corners.add(new Point(0, image.rows()));
+
+            r.add(ImageUtil.changeImagePerspective(image, originals, corners));
+        }
+        return r;
+    }
+
+    //WARNING: stepPer * num should be less than Min(image.width, image.height) and larger than 0
+    static public List<Mat> changeToTopPerspective(Mat image, float stepPer, int num) {
+        List<Mat> r = new ArrayList<>();
+
+        List<Point> originals = new ArrayList<>();
+        originals.add(new Point(0, 0));
+        originals.add(new Point(image.cols(), 0));
+        originals.add(new Point(image.cols(), image.rows()));
+        originals.add(new Point(0, image.rows()));
+        for (int i = 1; i <= num; i++) {
+            List<Point> corners = new ArrayList<>();
+            corners.add(new Point(0, 0));
+            corners.add(new Point(image.cols(), 0));
+            corners.add(new Point(image.cols()-stepPer*i, image.rows()-stepPer*i));
+            corners.add(new Point(stepPer*i, image.rows()-stepPer*i));
+
+            r.add(ImageUtil.changeImagePerspective(image, originals, corners));
+        }
+        return r;
+    }
+
+    //WARNING: stepPer * num should be less than Min(image.width, image.height) and larger than 0
+    static public List<Mat> changeToBottomPerspective(Mat image, float stepPer, int num) {
+        List<Mat> r = new ArrayList<>();
+
+        List<Point> originals = new ArrayList<>();
+        originals.add(new Point(0, 0));
+        originals.add(new Point(image.cols(), 0));
+        originals.add(new Point(image.cols(), image.rows()));
+        originals.add(new Point(0, image.rows()));
+        for (int i = 1; i <= num; i++) {
+            List<Point> corners = new ArrayList<>();
+            corners.add(new Point(stepPer*i, stepPer*i));
+            corners.add(new Point(image.cols()-i*stepPer, stepPer*i));
+            corners.add(new Point(image.cols(), image.rows()));
+            corners.add(new Point(0, image.rows()));
+
+            r.add(ImageUtil.changeImagePerspective(image, originals, corners));
         }
         return r;
     }
