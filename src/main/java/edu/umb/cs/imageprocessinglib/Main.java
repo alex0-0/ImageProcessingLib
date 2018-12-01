@@ -28,7 +28,7 @@ public class Main {
     private static void testDistortion() throws IOException {
         String image_1 = "src/main/resources/image/Vegeta_1.png";
         Mat img = ImageUtil.loadMatImage(image_1);
-        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(img));
+//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(img));
 //        List<Mat> distortedImg = ImageProcessor.rotatedImage(img, 5f, 5);
 //        List<Mat> distortedImg = ImageProcessor.scaleImage(img, -0.1f, 5);
 //        List<Mat> distortedImg = ImageProcessor.lightImage(img, -0.1f, 5);
@@ -37,28 +37,59 @@ public class Main {
 //        List<Mat> distortedImg = ImageProcessor.changeToBottomPerspective(img, 10f, 5);
 //        List<Mat> distortedImg = ImageProcessor.changeToTopPerspective(img, 10f, 5);
         for (Mat i : distortedImg) {
-            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(i));
+//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(i));
         }
 
         //test robust feature
+//        ImageFeature tIF = ImageProcessor.extractRobustFeatures(img, distortedImg, 100, DescriptorType.SURF);
         ImageFeature tIF = ImageProcessor.extractRobustFeatures(img, distortedImg, 100, DescriptorType.ORB);
         String image_2 = "src/main/resources/image/Vegeta_2.png";
         Mat testImg = ImageUtil.loadMatImage(image_2);
         ImageFeature testF = ImageProcessor.extractORBFeatures(testImg);
+//        ImageFeature testF = ImageProcessor.extractSURFFeatures(testImg);
         System.out.printf("Comparing %d vs %d FPs\n", tIF.getSize(), testF.getSize());
-        MatOfDMatch mymatches = ImageProcessor.matchWithRegression(testF, tIF);
+//        MatOfDMatch mymatches = ImageProcessor.matchWithRegression(testF, tIF);
+        MatOfDMatch mymatches = ImageProcessor.matchWithRegression(testF, tIF, 5, 500, 100);
         Mat display1 = new Mat();
         Features2d.drawMatches(testImg, testF.getObjectKeypoints(),img, tIF.getObjectKeypoints(),  mymatches, display1);
-        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display1));
+//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display1));
         System.out.printf("Distortion match number: %d, Precision: %f\n", mymatches.total(), (float)mymatches.total()/ tIF.getSize());
 
 
         ImageFeature tIF2 = ImageProcessor.extractORBFeatures(img, 100);
+//        ImageFeature tIF2 = ImageProcessor.extractSURFFeatures(img);
         Mat display2 = new Mat();
-        MatOfDMatch mymatches2 = ImageProcessor.matchWithRegression(testF, tIF2);
+//        MatOfDMatch mymatches2 = ImageProcessor.matchWithRegression(testF, tIF2);
+        MatOfDMatch mymatches2 = ImageProcessor.matchWithRegression(testF, tIF2, 5, 500, 100);
         Features2d.drawMatches(testImg, testF.getObjectKeypoints(),img, tIF2.getObjectKeypoints(),  mymatches2, display2);
-        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display2));
-        System.out.printf("Regular match number: %d, Precision: %f\n", mymatches2.total(), (float)mymatches2.total()/ tIF.getSize());
+//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display2));
+        System.out.printf("Regular match number: %d, Precision: %f\n", mymatches2.total(), (float)mymatches2.total()/ tIF2.getSize());
+
+        System.out.printf("dis_thd\trobust\tregular\n");
+        for (float i=200f; i<800; i+=50) {
+//        for (float i=0.5f; i<4; i+=0.2) {
+            MatOfDMatch robustMatch = ImageProcessor.matchWithRegression(testF, tIF, 5, i, 100);
+            MatOfDMatch regularMatch = ImageProcessor.matchWithRegression(testF, tIF2, 5, i, 100);
+            System.out.printf("%.2f \t %.2f(%d) \t %.2f(%d)\n",
+                    i,
+                    (float)robustMatch.total()/ tIF.getSize(),
+                    robustMatch.total(),
+                    (float)regularMatch.total()/tIF2.getSize(),
+                    regularMatch.total());
+        }
+
+//        Mat tMat = new Mat();//img.clone();
+//        Features2d.drawKeypoints(img, tIF.getObjectKeypoints(), tMat, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);
+//        ImageFeature imageFeature = ImageProcessor.extractORBFeatures(img, 100);
+//        Mat tMat_1 = new Mat();//img.clone();
+//        Features2d.drawKeypoints(img, imageFeature.getObjectKeypoints(), tMat_1, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);
+//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(tMat));
+//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(tMat_1));
+//        MatOfDMatch mymatches3 = ImageProcessor.matchImages(tIF, imageFeature);
+//        Mat display3 = new Mat();
+//        Features2d.drawMatches(tMat, tIF.getObjectKeypoints(),tMat_1, imageFeature.getObjectKeypoints(),  mymatches3, display3);
+//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display3));
+//        System.out.printf("Robust-Regular match number: %d, Precision: %f\n", mymatches3.total(), (float)mymatches3.total()/ tIF.getSize());
     }
 
     private static void testRobustFeature() throws IOException {

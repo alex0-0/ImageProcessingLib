@@ -148,7 +148,7 @@ public class ImageProcessor {
         MatOfKeyPoint kps = new MatOfKeyPoint();
         Mat des = new Mat();
         FeatureDetector.getInstance().extractRobustFeatures(img, distortedImg, kps, des, type, num);
-        return new ImageFeature(kps, des);
+        return new ImageFeature(kps, des, type);
     }
 
     /*
@@ -204,7 +204,7 @@ public class ImageProcessor {
      */
     static public MatOfDMatch matchImages(ImageFeature qIF, ImageFeature tIF) {
         if (qIF.getDescriptorType() != tIF.getDescriptorType()) {
-            System.out.printf("Can't match different feature descriptor types");
+            System.out.print("Can't match different feature descriptor types");
             return null;
         }
         return FeatureMatcher.getInstance().matchFeature(qIF.getDescriptors(), tIF.getDescriptors(),
@@ -214,7 +214,7 @@ public class ImageProcessor {
 
     static public MatOfDMatch myMatchImages(ImageFeature qIF, ImageFeature tIF, SimpleRegression rx, SimpleRegression ry) {
         if (qIF.getDescriptorType() != tIF.getDescriptorType()) {
-            System.out.printf("Can't match different feature descriptor types");
+            System.out.print("Can't match different feature descriptor types");
             return null;
         }
         return FeatureMatcher.getInstance().myMatchFeature(qIF.getDescriptors(), tIF.getDescriptors(),
@@ -233,7 +233,7 @@ public class ImageProcessor {
      */
     static public MatOfDMatch BFMatchImages(ImageFeature qIF, ImageFeature tIF) {
         if (qIF.getDescriptorType() != tIF.getDescriptorType()) {
-            System.out.printf("Can't match different feature descriptor types");
+            System.out.print("Can't match different feature descriptor types");
             return null;
         }
         return FeatureMatcher.getInstance().BFMatchFeature(qIF.getDescriptors(), tIF.getDescriptors(), qIF.getDescriptorType());
@@ -248,9 +248,9 @@ public class ImageProcessor {
         return kps[idx];
     }
 
-    static public MatOfDMatch matchWithRegression(ImageFeature qIF, ImageFeature tIF, int knnNum, int matchDisThd, int posThd) {
+    static public MatOfDMatch matchWithRegression(ImageFeature qIF, ImageFeature tIF, int knnNum, float matchDisThd, int posThd) {
         if (qIF.getDescriptorType() != tIF.getDescriptorType()) {
-            System.out.printf("Can't match different feature descriptor types");
+            System.out.print("Can't match different feature descriptor types");
             return null;
         }
         return FeatureMatcher.getInstance().matchWithRegression(qIF.getDescriptors(), tIF.getDescriptors(),

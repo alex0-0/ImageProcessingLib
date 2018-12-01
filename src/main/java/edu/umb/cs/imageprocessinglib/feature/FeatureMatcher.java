@@ -143,7 +143,7 @@ public class FeatureMatcher {
                                            MatOfKeyPoint templateKeyPoints,
                                            DescriptorType dType,
                                            int knnNum,
-                                           int matchDisThd,
+                                           float matchDisThd,
                                            int posThd) {
 //        MatOfDMatch matches = new MatOfDMatch();
 //        matcher.match(queryDescriptor, templateDescriptor, matches);       //k(final parameter) set to 1 will do crosscheck
