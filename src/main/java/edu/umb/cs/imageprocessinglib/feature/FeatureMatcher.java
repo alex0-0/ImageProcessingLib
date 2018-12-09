@@ -21,6 +21,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+
 /**
  * Created by alex on 1/28/18.
  */
@@ -156,8 +159,10 @@ public class FeatureMatcher {
 
         ArrayList<MatOfDMatch> matches1 = new ArrayList<>();
         ArrayList<MatOfDMatch>  matches2 = new ArrayList<>();
+        ArrayList<DMatch> retList = new ArrayList<>();
 
         //use templateDescriptor as query to make sure the match won't exceed the number of template key points
+        //Besides, logically speaking, we actually are querying if the template image is found in the query image
         m.knnMatch(templateDescriptor, queryDescriptor, matches1, knnNum);
         m.knnMatch(queryDescriptor, templateDescriptor, matches2, 2);      //matches will is used later
 
@@ -179,19 +184,30 @@ public class FeatureMatcher {
         KeyPoint[] queryKPs = queryKeyPoints.toArray();
 
         DMatch[] dMatches = symMatches.toArray();
+        List<Boolean> tags = new ArrayList<>(matches1.size());
+        for (int i=0; i < matches1.size(); i++)
+            tags.add(FALSE);
         for(int i=0;i<dMatches.length;i++){
             DMatch tmpd=dMatches[i];
-            KeyPoint kp2 = templateKPs[tmpd.queryIdx];
             KeyPoint kp1 = queryKPs[tmpd.trainIdx];
+            KeyPoint kp2 = templateKPs[tmpd.queryIdx];
 
 //            System.out.printf("x:%.02f, y:%.02f \t x:%.02f, y:%.02f \t dist:%.02f\n",kp1.pt.x, kp1.pt.y, kp2.pt.x, kp2.pt.y, tmpd.distance);
-            rx.addData(kp1.pt.x, kp2.pt.x);
-            ry.addData(kp1.pt.y, kp2.pt.y);
+//            rx.addData(kp1.pt.x, kp2.pt.x);
+//            ry.addData(kp1.pt.y, kp2.pt.y);
+            rx.addData(kp2.pt.x, kp1.pt.x);
+            ry.addData(kp2.pt.y, kp1.pt.y);
+
+            tags.set(tmpd.queryIdx, TRUE);
+            DMatch match = dMatches[i];
+            retList.add(new DMatch(match.trainIdx, match.queryIdx, match.distance));
         }
 
-        ArrayList<DMatch> retList = new ArrayList<>();
         for (int i = 0; i < matches1.size(); i++) {
             DMatch[] ms = matches1.get(i).toArray();
+            //this match is already in retList
+            if (tags.get(ms[0].queryIdx))
+                continue;
 
             int index = -1;
             double min = posThd;
@@ -199,20 +215,23 @@ public class FeatureMatcher {
                 if(ms[j].distance > matchDisThd) continue;
                 KeyPoint qkp = queryKPs[ms[j].trainIdx];
                 KeyPoint tkp = templateKPs[ms[j].queryIdx];
-                double ex = qkp.pt.x*rx.getSlope() + rx.getIntercept();
-                double ey = qkp.pt.y*ry.getSlope() + ry.getIntercept();
+//                KeyPoint qkp = queryKPs[ms[j].trainIdx];
+//                KeyPoint tkp = templateKPs[ms[j].queryIdx];
+                double ex = tkp.pt.x*rx.getSlope() + rx.getIntercept();
+                double ey = tkp.pt.y*ry.getSlope() + ry.getIntercept();
 
 //                System.out.printf("Q:%d, T:%d, dist:%.02f\n",ms[j].queryIdx,ms[j].trainIdx,ms[j].distance);
 //                System.out.printf("qx:%.02f, qy:%.02f\t tx:%.02f, ty:%.02f\t ex:%.02f, ey:%.02f\n",
 //                        qkp.pt.x,qkp.pt.y,tkp.pt.x, tkp.pt.y, ex,ey);
-                double diffx = Math.abs(ex-tkp.pt.x);
-                double diffy = Math.abs(ey-tkp.pt.y);
+                double diffx = Math.abs(ex-qkp.pt.x);
+                double diffy = Math.abs(ey-qkp.pt.y);
                 if( diffx < min && diffy < min){
                     min = Math.max(diffx, diffy);
                     index = j;
                 }
             }
             if (index != -1)
+                //To be consistent with the method parameters name, we exchange the DMatch parameter here.
                 retList.add(new DMatch(ms[index].trainIdx, ms[index].queryIdx, ms[index].distance));
         }
 

@@ -105,7 +105,8 @@ public class FeatureDetector {
 
         //match key points of original image to distorted images'
         for (int i = 0; i < distortedImages.size(); i++) {
-            MatOfDMatch m = FeatureMatcher.getInstance().matchFeature(distortedDes.get(i), oriDes, distortedKPs.get(i), oriKPs, type);
+//            MatOfDMatch m = FeatureMatcher.getInstance().matchFeature(distortedDes.get(i), oriDes, distortedKPs.get(i), oriKPs, type);
+            MatOfDMatch m = FeatureMatcher.getInstance().BFMatchFeature(distortedDes.get(i), oriDes, type);
 //            ArrayList<Integer> c = new ArrayList<>();
 
             //record the times that key point of original image is detected in distorted image
@@ -160,9 +161,9 @@ public class FeatureDetector {
 
         //remove feature points which appeared less than filterThreshold
         for (int i = 0; i < merged.size(); i++) {
-            if ((Integer)merged.get(i).get(1) > filterThreshold) {
+//            if ((Integer)merged.get(i).get(1) > filterThreshold) {
                 rKeyPoints.add(tKeyPoints.get(i));
-            }
+//            }
         }
         if (rKeyPoints.size() > num)
             rKeyPoints = rKeyPoints.subList(0, num);

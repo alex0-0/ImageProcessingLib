@@ -12,6 +12,7 @@ import org.opencv.features2d.Features2d;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.List;
 
 public class Main {
@@ -43,39 +44,104 @@ public class Main {
         //test robust feature
 //        ImageFeature tIF = ImageProcessor.extractRobustFeatures(img, distortedImg, 100, DescriptorType.SURF);
         ImageFeature tIF = ImageProcessor.extractRobustFeatures(img, distortedImg, 100, DescriptorType.ORB);
+//        String image_2 = "src/main/resources/image/test.jpg";
         String image_2 = "src/main/resources/image/Vegeta_2.png";
         Mat testImg = ImageUtil.loadMatImage(image_2);
         ImageFeature testF = ImageProcessor.extractORBFeatures(testImg);
 //        ImageFeature testF = ImageProcessor.extractSURFFeatures(testImg);
         System.out.printf("Comparing %d vs %d FPs\n", tIF.getSize(), testF.getSize());
-//        MatOfDMatch mymatches = ImageProcessor.matchWithRegression(testF, tIF);
-        MatOfDMatch mymatches = ImageProcessor.matchWithRegression(testF, tIF, 5, 500, 100);
+//        MatOfDMatch mymatches = ImageProcessor.matchImages(testF, tIF);
+        MatOfDMatch mymatches = ImageProcessor.matchWithRegression(testF, tIF);
+//        MatOfDMatch mymatches = ImageProcessor.matchWithRegression(testF, tIF, 5, 500, 15);
         Mat display1 = new Mat();
         Features2d.drawMatches(testImg, testF.getObjectKeypoints(),img, tIF.getObjectKeypoints(),  mymatches, display1);
-//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display1));
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display1));
         System.out.printf("Distortion match number: %d, Precision: %f\n", mymatches.total(), (float)mymatches.total()/ tIF.getSize());
 
 
         ImageFeature tIF2 = ImageProcessor.extractORBFeatures(img, 100);
 //        ImageFeature tIF2 = ImageProcessor.extractSURFFeatures(img);
         Mat display2 = new Mat();
-//        MatOfDMatch mymatches2 = ImageProcessor.matchWithRegression(testF, tIF2);
-        MatOfDMatch mymatches2 = ImageProcessor.matchWithRegression(testF, tIF2, 5, 500, 100);
+//        MatOfDMatch mymatches2 = ImageProcessor.matchImages(testF, tIF2);
+        MatOfDMatch mymatches2 = ImageProcessor.matchWithRegression(testF, tIF2);
+//        MatOfDMatch mymatches2 = ImageProcessor.matchWithRegression(testF, tIF2, 5, 500, 15);
         Features2d.drawMatches(testImg, testF.getObjectKeypoints(),img, tIF2.getObjectKeypoints(),  mymatches2, display2);
-//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display2));
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display2));
         System.out.printf("Regular match number: %d, Precision: %f\n", mymatches2.total(), (float)mymatches2.total()/ tIF2.getSize());
+
+        List<KeyPoint> tKP = tIF2.getObjectKeypoints().toList();
+        List<KeyPoint> qKP = testF.getObjectKeypoints().toList();
+        List<KeyPoint> dtKP = tIF.getObjectKeypoints().toList();
+        Comparator<DMatch> comparator = new Comparator<DMatch>() {
+            @Override
+            public int compare(DMatch o1, DMatch o2) {
+                if ( tKP.get(o1.trainIdx).pt.x > tKP.get(o2.trainIdx).pt.x)
+                    return 1;
+                if ( tKP.get(o1.trainIdx).pt.x < tKP.get(o2.trainIdx).pt.x)
+                    return -1;
+                return 0;
+            }
+        };
+        List<DMatch> matches1 = mymatches.toList();
+        matches1.sort((o1, o2) -> {
+            return (int)(dtKP.get(o1.trainIdx).pt.x - dtKP.get(o2.trainIdx).pt.x);
+        });
+        List<DMatch> matches2 = mymatches2.toList();
+        matches2.sort((o1, o2) -> {
+            return (int)(tKP.get(o1.trainIdx).pt.x - tKP.get(o2.trainIdx).pt.x);
+        });
+        for (int i = 0; i < Math.max(matches1.size(), matches2.size()); i++) {
+            if (matches2.size() > i) {
+                DMatch match = matches2.get(i);
+                System.out.printf("t: (%.2f, %.2f), q: (%.2f, %.2f)",
+                        tKP.get(match.trainIdx).pt.x, tKP.get(match.trainIdx).pt.y,
+                        qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y
+                );
+            }
+            if (matches1.size() > i) {
+                DMatch match = matches1.get(i);
+                System.out.printf("\t|\tt: (%.2f, %.2f), q: (%.2f, %.2f)",
+                        dtKP.get(match.trainIdx).pt.x, dtKP.get(match.trainIdx).pt.y,
+                        qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y
+                );
+            }
+            System.out.printf("\n");
+        }
+//        for (DMatch match : matches1) {
+//            System.out.printf("template pos: (%.2f, %.2f), query pos: (%.2f, %.2f)\n",
+//                    tKP.get(match.trainIdx).pt.x, dtKP.get(match.trainIdx).pt.y,
+//                    qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y
+//            );
+//        }
+        dtKP.sort((kp1, kp2) -> {
+            return (int)(kp1.pt.x - kp2.pt.x);
+        });
+        for (KeyPoint kp : dtKP) {
+            System.out.printf("keypoint pos: (%.2f, %.2f)\n", kp.pt.x, kp.pt.y);
+        }
+        System.out.printf("\n*************************\n");
+//        List<DMatch> matches2 = mymatches2.toList();
+//        matches2.sort(comparator);
+//        for (DMatch match : matches2) {
+//            System.out.printf("template pos: (%.2f, %.2f), query pos: (%.2f, %.2f)\n",
+//                    tKP.get(match.trainIdx).pt.x, tKP.get(match.trainIdx).pt.y,
+//                    qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y
+//                    );
+//        }
 
         System.out.printf("dis_thd\trobust\tregular\n");
         for (float i=200f; i<800; i+=50) {
 //        for (float i=0.5f; i<4; i+=0.2) {
             MatOfDMatch robustMatch = ImageProcessor.matchWithRegression(testF, tIF, 5, i, 100);
             MatOfDMatch regularMatch = ImageProcessor.matchWithRegression(testF, tIF2, 5, i, 100);
-            System.out.printf("%.2f \t %.2f(%d) \t %.2f(%d)\n",
-                    i,
-                    (float)robustMatch.total()/ tIF.getSize(),
-                    robustMatch.total(),
-                    (float)regularMatch.total()/tIF2.getSize(),
-                    regularMatch.total());
+//            MatOfDMatch robustMatch = ImageProcessor.matchImages(testF, tIF);
+//            MatOfDMatch regularMatch = ImageProcessor.matchImages(testF, tIF2);
+//            System.out.printf("%.2f \t %.2f(%d) \t %.2f(%d)\n",
+//                    i,
+//                    (float)robustMatch.total()/ tIF.getSize(),
+//                    robustMatch.total(),
+//                    (float)regularMatch.total()/tIF2.getSize(),
+//                    regularMatch.total());
         }
 
 //        Mat tMat = new Mat();//img.clone();
