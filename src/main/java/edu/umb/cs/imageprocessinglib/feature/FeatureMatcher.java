@@ -169,7 +169,13 @@ public class FeatureMatcher {
         ratioTest(matches1);
         ratioTest(matches2);
 
-        MatOfDMatch symMatches = symmetryTest(matches1, matches2);
+//        MatOfDMatch symMatches = symmetryTest(matches1, matches2);
+        MatOfDMatch symMatches = new MatOfDMatch();//symmetryTest(matches1, matches2);
+        ArrayList<DMatch> symMatchList = new ArrayList<>();
+        for (MatOfDMatch match : matches1) {
+            symMatchList.add(match.toArray()[0]);
+        }
+        symMatches.fromList(symMatchList);
         MatOfDMatch ransacMatches = new MatOfDMatch();
 
         if (symMatches.total() > 20) {

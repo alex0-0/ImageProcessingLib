@@ -93,16 +93,18 @@ public class Main {
         for (int i = 0; i < Math.max(matches1.size(), matches2.size()); i++) {
             if (matches2.size() > i) {
                 DMatch match = matches2.get(i);
-                System.out.printf("t: (%.2f, %.2f), q: (%.2f, %.2f)",
+                System.out.printf("t: (%.2f, %.2f), q: (%.2f, %.2f), dis: %.2f",
                         tKP.get(match.trainIdx).pt.x, tKP.get(match.trainIdx).pt.y,
-                        qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y
+                        qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y,
+                        match.distance
                 );
             }
             if (matches1.size() > i) {
                 DMatch match = matches1.get(i);
-                System.out.printf("\t|\tt: (%.2f, %.2f), q: (%.2f, %.2f)",
+                System.out.printf("\t|\tt: (%.2f, %.2f), q: (%.2f, %.2f), dis: %.2f",
                         dtKP.get(match.trainIdx).pt.x, dtKP.get(match.trainIdx).pt.y,
-                        qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y
+                        qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y,
+                        match.distance
                 );
             }
             System.out.printf("\n");
@@ -132,8 +134,8 @@ public class Main {
         System.out.printf("dis_thd\trobust\tregular\n");
         for (float i=200f; i<800; i+=50) {
 //        for (float i=0.5f; i<4; i+=0.2) {
-            MatOfDMatch robustMatch = ImageProcessor.matchWithRegression(testF, tIF, 5, i, 100);
-            MatOfDMatch regularMatch = ImageProcessor.matchWithRegression(testF, tIF2, 5, i, 100);
+//            MatOfDMatch robustMatch = ImageProcessor.matchWithRegression(testF, tIF, 5, i, 100);
+//            MatOfDMatch regularMatch = ImageProcessor.matchWithRegression(testF, tIF2, 5, i, 100);
 //            MatOfDMatch robustMatch = ImageProcessor.matchImages(testF, tIF);
 //            MatOfDMatch regularMatch = ImageProcessor.matchImages(testF, tIF2);
 //            System.out.printf("%.2f \t %.2f(%d) \t %.2f(%d)\n",
