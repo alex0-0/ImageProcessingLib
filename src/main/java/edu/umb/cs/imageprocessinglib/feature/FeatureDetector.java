@@ -148,21 +148,12 @@ public class FeatureDetector {
                         .collect(Collectors.toList());
 
         //descending order sort by counter
-        merged.sort(new Comparator<List<Object>>() {
-            @Override
-            public int compare(List<Object> o1, List<Object> o2) {
-                if ((Integer) o1.get(1) > (Integer)o2.get(1))
-                    return -1;
-                else if ((Integer) o1.get(1) < (Integer)o2.get(1))
-                    return 1;
-                else return 0;
-            }
-        });
+        merged.sort((o1, o2) -> {return (Integer) o2.get(1) - (Integer)o1.get(1);});
 
         //remove feature points which appeared less than filterThreshold
         for (int i = 0; i < merged.size(); i++) {
 //            if ((Integer)merged.get(i).get(1) > filterThreshold) {
-                rKeyPoints.add(tKeyPoints.get(i));
+                rKeyPoints.add((KeyPoint)merged.get(i).get(0));
 //            }
         }
         if (rKeyPoints.size() > num)
