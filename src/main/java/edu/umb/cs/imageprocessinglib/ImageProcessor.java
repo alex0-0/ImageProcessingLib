@@ -147,6 +147,7 @@ public class ImageProcessor {
     static public ImageFeature extractRobustFeatures(Mat img, List<Mat> distortedImg, int num, DescriptorType type) {
         MatOfKeyPoint kps = new MatOfKeyPoint();
         Mat des = new Mat();
+//        FeatureDetector fd = new FeatureDetector(num);
         FeatureDetector.getInstance().extractRobustFeatures(img, distortedImg, kps, des, type, num);
         return new ImageFeature(kps, des, type);
     }

@@ -72,16 +72,6 @@ public class Main {
         List<KeyPoint> tKP = tIF2.getObjectKeypoints().toList();
         List<KeyPoint> qKP = testF.getObjectKeypoints().toList();
         List<KeyPoint> dtKP = tIF.getObjectKeypoints().toList();
-        Comparator<DMatch> comparator = new Comparator<DMatch>() {
-            @Override
-            public int compare(DMatch o1, DMatch o2) {
-                if ( tKP.get(o1.trainIdx).pt.x > tKP.get(o2.trainIdx).pt.x)
-                    return 1;
-                if ( tKP.get(o1.trainIdx).pt.x < tKP.get(o2.trainIdx).pt.x)
-                    return -1;
-                return 0;
-            }
-        };
         List<DMatch> matches1 = mymatches.toList();
         matches1.sort((o1, o2) -> {
             return (int)(dtKP.get(o1.trainIdx).pt.x - dtKP.get(o2.trainIdx).pt.x);

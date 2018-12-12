@@ -105,14 +105,14 @@ public class FeatureDetector {
 
         //match key points of original image to distorted images'
         for (int i = 0; i < distortedImages.size(); i++) {
-//            MatOfDMatch m = FeatureMatcher.getInstance().matchFeature(distortedDes.get(i), oriDes, distortedKPs.get(i), oriKPs, type);
-            MatOfDMatch m = FeatureMatcher.getInstance().BFMatchFeature(distortedDes.get(i), oriDes, type);
+            MatOfDMatch m = FeatureMatcher.getInstance().matchFeature(oriDes, distortedDes.get(i), oriKPs, distortedKPs.get(i), type);
+//            MatOfDMatch m = FeatureMatcher.getInstance().BFMatchFeature(oriDes, distortedDes.get(i), type);
 //            ArrayList<Integer> c = new ArrayList<>();
 
             //record the times that key point of original image is detected in distorted image
             List<DMatch> matches = m.toList();
             for (int d = 0; d < matches.size(); d++) {
-                int index = matches.get(d).trainIdx;
+                int index = matches.get(d).queryIdx;
                 tracker.get(index).add(i);
             }
             distortedMatches.add(m);
