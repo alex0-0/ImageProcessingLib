@@ -8,12 +8,16 @@ import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import edu.umb.cs.imageprocessinglib.util.StorageUtil;
 import org.opencv.core.*;
 import org.opencv.features2d.Features2d;
+import org.opencv.features2d.FlannBasedMatcher;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+
+import static org.opencv.core.CvType.CV_32F;
 
 public class Main {
 
@@ -39,6 +43,34 @@ public class Main {
 //        List<Mat> distortedImg = ImageProcessor.changeToTopPerspective(img, 10f, 5);
         for (Mat i : distortedImg) {
 //            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(i));
+            //match distorted images with original image
+//            ImageFeature qIF = ImageProcessor.extractFeatures(i);
+//            ImageFeature tIF = ImageProcessor.extractFeatures(img);
+//            Mat descriptors_1 = qIF.getDescriptors();
+//            Mat descriptors_2 = tIF.getDescriptors();
+//            if(descriptors_1.type()!=CV_32F) {
+//                descriptors_1.convertTo(descriptors_1, CV_32F);
+//            }
+//
+//            if(descriptors_2.type()!=CV_32F) {
+//                descriptors_2.convertTo(descriptors_2, CV_32F);
+//            }
+////            MatOfDMatch mymatches = ImageProcessor.BFMatchImages(qIF, tIF);
+//            FlannBasedMatcher matcher = FlannBasedMatcher.create();
+//            MatOfDMatch mymatches = new MatOfDMatch();
+//            matcher.match(qIF.getDescriptors(), tIF.getDescriptors(), mymatches);
+////            List<DMatch> m = new ArrayList<>();
+////
+////            for (DMatch match : mymatches.toList()) {
+////                if (match.distance < 200)
+////                    m.add(match);
+////            }
+////            mymatches = new MatOfDMatch();
+////            mymatches.fromList(m);
+//            Mat display1 = new Mat();
+//            Features2d.drawMatches(i, qIF.getObjectKeypoints(),img, tIF.getObjectKeypoints(),  mymatches, display1);
+//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display1));
+//            System.out.printf("Distortion match number: %d, Precision: %f\n", mymatches.total(), (float)mymatches.total()/ tIF.getSize());
         }
 
         //test robust feature

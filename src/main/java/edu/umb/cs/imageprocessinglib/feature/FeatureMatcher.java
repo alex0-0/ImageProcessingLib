@@ -2,6 +2,7 @@ package edu.umb.cs.imageprocessinglib.feature;
 
 import edu.umb.cs.imageprocessinglib.ImageProcessor;
 import edu.umb.cs.imageprocessinglib.model.DescriptorType;
+import javafx.util.Pair;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.DMatch;
@@ -14,12 +15,8 @@ import org.opencv.core.Point;
 import org.opencv.features2d.BFMatcher;
 import org.opencv.features2d.DescriptorMatcher;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.lang.reflect.Array;
+import java.util.*;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -169,13 +166,13 @@ public class FeatureMatcher {
         ratioTest(matches1);
         ratioTest(matches2);
 
-//        MatOfDMatch symMatches = symmetryTest(matches1, matches2);
-        MatOfDMatch symMatches = new MatOfDMatch();//symmetryTest(matches1, matches2);
-        ArrayList<DMatch> symMatchList = new ArrayList<>();
-        for (MatOfDMatch match : matches1) {
-            symMatchList.add(match.toArray()[0]);
-        }
-        symMatches.fromList(symMatchList);
+        MatOfDMatch symMatches = symmetryTest(matches1, matches2);
+//        MatOfDMatch symMatches = new MatOfDMatch();//symmetryTest(matches1, matches2);
+//        ArrayList<DMatch> symMatchList = new ArrayList<>();
+//        for (MatOfDMatch match : matches1) {
+//            symMatchList.add(match.toArray()[0]);
+//        }
+//        symMatches.fromList(symMatchList);
         MatOfDMatch ransacMatches = new MatOfDMatch();
 
         if (symMatches.total() > 20) {
@@ -190,34 +187,45 @@ public class FeatureMatcher {
         KeyPoint[] queryKPs = queryKeyPoints.toArray();
 
         DMatch[] dMatches = symMatches.toArray();
-        List<Boolean> tags = new ArrayList<>(matches1.size());
-        for (int i=0; i < matches1.size(); i++)
-            tags.add(FALSE);
-        for(int i=0;i<dMatches.length;i++){
-            DMatch tmpd=dMatches[i];
+        //record which template key point is matched already
+        List<Boolean> tepTag = new ArrayList<>(matches1.size());
+        //record which query key point is matched already
+        BitSet qryTag = new BitSet(queryKPs.length);
+
+        for (int i=0; i < templateKPs.length; i++)
+            tepTag.add(FALSE);
+        for(int i=0;i<dMatches.length;i++) {
+            DMatch tmpd = dMatches[i];
             KeyPoint kp1 = queryKPs[tmpd.trainIdx];
             KeyPoint kp2 = templateKPs[tmpd.queryIdx];
 
-//            System.out.printf("x:%.02f, y:%.02f \t x:%.02f, y:%.02f \t dist:%.02f\n",kp1.pt.x, kp1.pt.y, kp2.pt.x, kp2.pt.y, tmpd.distance);
-//            rx.addData(kp1.pt.x, kp2.pt.x);
-//            ry.addData(kp1.pt.y, kp2.pt.y);
+            //mark the query key point is matched
+            qryTag.set(tmpd.trainIdx);
+
             rx.addData(kp2.pt.x, kp1.pt.x);
             ry.addData(kp2.pt.y, kp1.pt.y);
 
-            tags.set(tmpd.queryIdx, TRUE);
+            //mark template key point is matched
+            tepTag.set(tmpd.queryIdx, TRUE);
             DMatch match = dMatches[i];
             retList.add(new DMatch(match.trainIdx, match.queryIdx, match.distance));
         }
 
+        List<List<DMatch>> candidates = new ArrayList<>();
+
         for (int i = 0; i < matches1.size(); i++) {
             DMatch[] ms = matches1.get(i).toArray();
             //this match is already in retList
-            if (tags.get(ms[0].queryIdx))
+            if (tepTag.get(ms[0].queryIdx))
                 continue;
 
-            int index = -1;
-            double min = posThd;
+//            int index = -1;
+//            double min = posThd;
+            List<DMatch> matches = new ArrayList<>();
             for(int j=0;j<ms.length;j++){
+                //if the query point is already matched, skip
+                if (qryTag.get(ms[j].trainIdx))
+                    continue;
                 if(ms[j].distance > matchDisThd) continue;
                 KeyPoint qkp = queryKPs[ms[j].trainIdx];
                 KeyPoint tkp = templateKPs[ms[j].queryIdx];
@@ -226,19 +234,55 @@ public class FeatureMatcher {
                 double ex = tkp.pt.x*rx.getSlope() + rx.getIntercept();
                 double ey = tkp.pt.y*ry.getSlope() + ry.getIntercept();
 
-//                System.out.printf("Q:%d, T:%d, dist:%.02f\n",ms[j].queryIdx,ms[j].trainIdx,ms[j].distance);
-//                System.out.printf("qx:%.02f, qy:%.02f\t tx:%.02f, ty:%.02f\t ex:%.02f, ey:%.02f\n",
-//                        qkp.pt.x,qkp.pt.y,tkp.pt.x, tkp.pt.y, ex,ey);
                 double diffx = Math.abs(ex-qkp.pt.x);
                 double diffy = Math.abs(ey-qkp.pt.y);
-                if( diffx < min && diffy < min){
-                    min = Math.max(diffx, diffy);
-                    index = j;
+//                if( diffx < min && diffy < min){
+                if( diffx < posThd && diffy < posThd){
+//                    min = Math.max(diffx, diffy);
+//                    index = j;
+                    matches.add(ms[j]);
                 }
             }
-            if (index != -1)
-                //To be consistent with the method parameters name, we exchange the DMatch parameter here.
-                retList.add(new DMatch(ms[index].trainIdx, ms[index].queryIdx, ms[index].distance));
+            if (matches.size() > 0)
+                candidates.add(matches);
+//            if (index != -1)
+//                //To be consistent with the method parameters name, we exchange the DMatch parameter here.
+//                retList.add(new DMatch(ms[index].trainIdx, ms[index].queryIdx, ms[index].distance));
+        }
+
+        Map<Integer, DMatch> tracker = new HashMap<>();
+        while (candidates.size() > 0) {
+            for (Iterator<List<DMatch>> it=candidates.iterator(); it.hasNext();) {
+                List<DMatch> lm = it.next();
+                //this template point has been matched
+                if (tepTag.get(lm.get(0).queryIdx)) {
+                    it.remove();
+                    continue;
+                }
+                //try to find a query point that matches the template point
+                int i = 0;
+                for (DMatch match = lm.get(i); i < lm.size(); i++) {
+                    DMatch prevMatch = tracker.get(match.trainIdx);
+                    if (prevMatch == null || prevMatch.distance > match.distance) {
+                        if (prevMatch != null) {
+                            //this point matches better than previous one, so erase the mark for previous matched point
+                            tepTag.set(prevMatch.queryIdx, FALSE);
+                        }
+                        tracker.put(match.trainIdx, match);
+                        //this template point finds a match in query points
+                        tepTag.set(match.queryIdx, TRUE);
+                        break;
+                    }
+                }
+                //can't find a fit
+                if (i >= lm.size())
+                    it.remove();
+            }
+        }
+        //add those matches to return list
+        for (Integer i : tracker.keySet()) {
+            DMatch match = tracker.get(i);
+            retList.add(new DMatch(match.trainIdx, match.queryIdx, match.distance));
         }
 
         for (int i = 0; i < matches1.size(); i++) {
