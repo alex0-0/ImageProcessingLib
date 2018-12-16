@@ -44,10 +44,10 @@ public class Main {
         for (Mat i : distortedImg) {
 //            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(i));
             //match distorted images with original image
-//            ImageFeature qIF = ImageProcessor.extractFeatures(i);
-//            ImageFeature tIF = ImageProcessor.extractFeatures(img);
-//            Mat descriptors_1 = qIF.getDescriptors();
-//            Mat descriptors_2 = tIF.getDescriptors();
+            ImageFeature qIF = ImageProcessor.extractFeatures(i);
+            ImageFeature tIF = ImageProcessor.extractFeatures(img);
+            Mat descriptors_1 = qIF.getDescriptors();
+            Mat descriptors_2 = tIF.getDescriptors();
 //            if(descriptors_1.type()!=CV_32F) {
 //                descriptors_1.convertTo(descriptors_1, CV_32F);
 //            }
@@ -55,22 +55,22 @@ public class Main {
 //            if(descriptors_2.type()!=CV_32F) {
 //                descriptors_2.convertTo(descriptors_2, CV_32F);
 //            }
-////            MatOfDMatch mymatches = ImageProcessor.BFMatchImages(qIF, tIF);
 //            FlannBasedMatcher matcher = FlannBasedMatcher.create();
 //            MatOfDMatch mymatches = new MatOfDMatch();
 //            matcher.match(qIF.getDescriptors(), tIF.getDescriptors(), mymatches);
-////            List<DMatch> m = new ArrayList<>();
-////
-////            for (DMatch match : mymatches.toList()) {
-////                if (match.distance < 200)
-////                    m.add(match);
-////            }
-////            mymatches = new MatOfDMatch();
-////            mymatches.fromList(m);
-//            Mat display1 = new Mat();
-//            Features2d.drawMatches(i, qIF.getObjectKeypoints(),img, tIF.getObjectKeypoints(),  mymatches, display1);
-//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display1));
-//            System.out.printf("Distortion match number: %d, Precision: %f\n", mymatches.total(), (float)mymatches.total()/ tIF.getSize());
+            MatOfDMatch mymatches = ImageProcessor.BFMatchImages(qIF, tIF);
+            List<DMatch> m = new ArrayList<>();
+
+            for (DMatch match : mymatches.toList()) {
+                if (match.distance < 200)
+                    m.add(match);
+            }
+            mymatches = new MatOfDMatch();
+            mymatches.fromList(m);
+            Mat display1 = new Mat();
+            Features2d.drawMatches(i, qIF.getObjectKeypoints(),img, tIF.getObjectKeypoints(),  mymatches, display1);
+            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display1));
+            System.out.printf("Distortion match number: %d, Precision: %f\n", mymatches.total(), (float)mymatches.total()/ tIF.getSize());
         }
 
         //test robust feature
@@ -288,14 +288,14 @@ public class Main {
 //            ImageUtil.displayImage(temp.loadPixels());
 //            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(temp.getPixels()));
             //ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(recognition.getPixels()));
-            Recognition temp = StorageUtil.readRecognitionFromFile("test" + i);
-            Mat croppedImg = temp.loadPixels();
-            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(croppedImg));
-            ImageFeature imageFeature = temp.loadFeature();
-            MatOfDMatch m = ImageProcessor.matchImages(imageFeature, imageFeature);
-            Mat display = new Mat();
-            Features2d.drawMatches(croppedImg, imageFeature.getObjectKeypoints(), croppedImg, imageFeature.getObjectKeypoints(), m, display);
-            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+//            Recognition temp = StorageUtil.readRecognitionFromFile("test" + i);
+//            Mat croppedImg = temp.loadPixels();
+//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(croppedImg));
+//            ImageFeature imageFeature = temp.loadFeature();
+//            MatOfDMatch m = ImageProcessor.matchImages(imageFeature, imageFeature);
+//            Mat display = new Mat();
+//            Features2d.drawMatches(croppedImg, imageFeature.getObjectKeypoints(), croppedImg, imageFeature.getObjectKeypoints(), m, display);
+//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
         }
 //        Recognition temp=StorageUtil.readRecognitionFromFile("test");
 //        Mat croppedImg = temp.loadPixels();
