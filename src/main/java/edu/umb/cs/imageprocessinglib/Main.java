@@ -31,7 +31,7 @@ public class Main {
     }
 
     private static void testDistortion() throws IOException {
-        String image_1 = "src/main/resources/image/Vegeta_1.png";
+        String image_1 = "src/main/resources/image/Vegeta_20.png";
         Mat img = ImageUtil.loadMatImage(image_1);
 //        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(img));
 //        List<Mat> distortedImg = ImageProcessor.rotatedImage(img, 5f, 5);
@@ -77,7 +77,7 @@ public class Main {
 //        ImageFeature tIF = ImageProcessor.extractRobustFeatures(img, distortedImg, 100, DescriptorType.SURF);
         ImageFeature tIF = ImageProcessor.extractRobustFeatures(img, distortedImg, 100, DescriptorType.ORB);
 //        String image_2 = "src/main/resources/image/test.jpg";
-        String image_2 = "src/main/resources/image/Vegeta_2.png";
+        String image_2 = "src/main/resources/image/Vegeta_00.png";
         Mat testImg = ImageUtil.loadMatImage(image_2);
         ImageFeature testF = ImageProcessor.extractORBFeatures(testImg);
 //        ImageFeature testF = ImageProcessor.extractSURFFeatures(testImg);
@@ -183,8 +183,8 @@ public class Main {
     }
 
     private static void testRobustFeature() throws IOException {
-        String image_1 = "src/main/resources/image/Vegeta_1.png";
-        String image_2 = "src/main/resources/image/Vegeta_2.png";
+        String image_1 = "src/main/resources/image/Vegeta_10.png";
+        String image_2 = "src/main/resources/image/Vegeta_00.png";
         Mat img = ImageUtil.loadMatImage(image_1);
         Mat testImg = ImageUtil.loadMatImage(image_2);
 //        testImg = ImageUtil.scaleImage(testImg, 0.8f);
@@ -273,7 +273,7 @@ public class Main {
     private static void testTensorFlow() throws IOException {
 //      String IMAGE = "/image/cow-and-bird.jpg";
         //String IMAGE = "/image/eagle.jpg";
-        String imgPath = "src/main/resources/image/test_10.jpg";
+        String imgPath = "src/main/resources/image/test_20.jpg";
         BufferedImage img = ImageUtil.loadImage(imgPath);
         ObjectDetector objectDetector = new ObjectDetector();
         objectDetector.init();

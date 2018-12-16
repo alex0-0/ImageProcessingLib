@@ -112,8 +112,10 @@ public class FeatureDetector {
             //record the times that key point of original image is detected in distorted image
             List<DMatch> matches = m.toList();
             for (int d = 0; d < matches.size(); d++) {
-                int index = matches.get(d).queryIdx;
-                tracker.get(index).add(i);
+                if (matches.get(d).distance<300) {
+                    int index = matches.get(d).queryIdx;
+                    tracker.get(index).add(i);
+                }
             }
             distortedMatches.add(m);
         }
@@ -148,12 +150,17 @@ public class FeatureDetector {
                         .collect(Collectors.toList());
 
         //descending order sort by counter
-        merged.sort((o1, o2) -> {return (Integer) o2.get(1) - (Integer)o1.get(1);});
+        merged.sort((o1, o2) -> {return (Integer)o2.get(1) - (Integer)o1.get(1);});
 
+        System.out.printf("position:(x,y)\tcounter\n");
         //remove feature points which appeared less than filterThreshold
         for (int i = 0; i < merged.size(); i++) {
 //            if ((Integer)merged.get(i).get(1) > filterThreshold) {
                 rKeyPoints.add((KeyPoint)merged.get(i).get(0));
+            if (i == num)
+                System.out.println("\n\nFeature points not taken");
+            KeyPoint keyPoint = (KeyPoint)merged.get(i).get(0);
+            System.out.printf("(%.2f,%.2f)\t%d\n", keyPoint.pt.x, keyPoint.pt.y, merged.get(i).get(1));
 //            }
         }
         if (rKeyPoints.size() > num)
