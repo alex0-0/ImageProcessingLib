@@ -31,7 +31,7 @@ public class Main {
     }
 
     private static void testDistortion() throws IOException {
-        String image_1 = "src/main/resources/image/Vegeta_20.png";
+        String image_1 = "src/main/resources/image/Vegeta_10.png";
         Mat img = ImageUtil.loadMatImage(image_1);
 //        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(img));
 //        List<Mat> distortedImg = ImageProcessor.rotatedImage(img, 5f, 5);

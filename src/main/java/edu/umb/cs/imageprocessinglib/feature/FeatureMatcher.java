@@ -211,6 +211,21 @@ public class FeatureMatcher {
             retList.add(new DMatch(match.trainIdx, match.queryIdx, match.distance));
         }
 
+        //calculate position distance threshold
+        int positionThd = 0;
+        for(int i=0;i<dMatches.length;i++) {
+            DMatch tmpd = dMatches[i];
+            KeyPoint kp1 = queryKPs[tmpd.trainIdx];
+            KeyPoint kp2 = templateKPs[tmpd.queryIdx];
+            double ex = kp2.pt.x*rx.getSlope() + rx.getIntercept();
+            double ey = kp2.pt.y*ry.getSlope() + ry.getIntercept();
+
+            double diffx = Math.abs(ex-kp1.pt.x);
+            double diffy = Math.abs(ey-kp1.pt.y);
+            positionThd += Math.max(diffx, diffy);
+        }
+        posThd = (int)(positionThd/dMatches.length*1.5f);
+
         List<List<DMatch>> candidates = new ArrayList<>();
 
         for (int i = 0; i < matches1.size(); i++) {
