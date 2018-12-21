@@ -76,7 +76,7 @@ public class FeatureDetector {
      *          each sub-list, supposing its index is A_index, corresponds to each feature, supposing it's A_feature, in original image
      *          the integer in A_index sub-list stands for the index of distorted image which can find A_feature.
      */
-    public ArrayList<ArrayList<Integer>> trackFeatures(
+    public ArrayList<HashSet<Integer>> trackFeatures(
             Mat img,
             List<Mat> distortedImages,
             MatOfKeyPoint oriKPs,
@@ -90,9 +90,11 @@ public class FeatureDetector {
         extractFeatures(img, oriKPs, oriDes, type);
 
         //record the index of images to which the key point get matched
-        ArrayList<ArrayList<Integer>> tracker = new ArrayList<>();
+        //ArrayList<ArrayList<Integer>> tracker = new ArrayList<>();
+        ArrayList<HashSet<Integer>> tracker = new ArrayList<HashSet<Integer>>();
+
         for (int i = 0; i < oriDes.rows(); i++)
-            tracker.add(new ArrayList<>());
+            tracker.add(new HashSet<Integer>());
 
         //calculate key points and descriptors of distorted images
         for (int i = 0; i < distortedImages.size(); i++) {
@@ -138,7 +140,29 @@ public class FeatureDetector {
         Mat des = new Mat();
         ArrayList<MatOfDMatch> listOfMatches = new ArrayList<>();
 
-        List<ArrayList<Integer>> tracker = trackFeatures(img, distortedImages, kp, des, listOfKeyPoints, listOfDescriptors, listOfMatches, type);
+        List<HashSet<Integer>> tracker = trackFeatures(img, distortedImages, kp, des, listOfKeyPoints, listOfDescriptors, listOfMatches, type);
+
+/*
+print out matching results
+ */
+        System.out.printf("\tqID\ttotal");
+        for(int i=0;i<distortedImages.size();i++){
+            System.out.printf("\tdImg%d",i);
+        }
+        System.out.println();
+        for(int i=0;i<tracker.size();i++) {
+            System.out.printf("\t%3d", i);
+            HashSet<Integer> hs = tracker.get(i);
+            System.out.printf("\t%5d", hs.size());
+            for(int j=0;j<distortedImages.size();j++) {
+                String str = "0";
+                if (hs.contains(j)) {
+                    str = "1";
+                }
+                System.out.printf("\t%5s",str);
+            }
+            System.out.println();
+        }
 
         List<KeyPoint> rKeyPoints = new ArrayList<>();     //store key points that will be return
         List<KeyPoint> tKeyPoints = kp.toList();
@@ -184,6 +208,10 @@ public class FeatureDetector {
         return true;
     }
 
+
+
+
+
     private static int kRobustThreshold =   3;      //threshold deciding whether a feature point is robust to distortion
 
     public boolean extractRobustFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int num) {
@@ -197,6 +225,7 @@ public class FeatureDetector {
     public boolean extractRobustFeatures(Mat img, List<Mat> distortedImg, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int num) {
         return sortedRobustFeatures(img, distortedImg, keyPoints, descriptors, type, kRobustThreshold, num);
     }
+
 
     /**
      * Get a group of distorted images by applying transformation on original image
