@@ -439,14 +439,14 @@ public class Main {
                 mL.sort((o1, o2) -> {
                     return (int)(tKP.get(o1.trainIdx).pt.x - tKP.get(o2.trainIdx).pt.x);
                 });
-//                for (int i = 0; i < mL.size(); i++) {
-//                        DMatch match = mL.get(i);
-//                        System.out.printf("t: (%.2f, %.2f), q: (%.2f, %.2f), dis: %.2f\n",
-//                                tKP.get(match.trainIdx).pt.x, tKP.get(match.trainIdx).pt.y,
-//                                qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y,
-//                                match.distance);
-//                }
-//                System.out.println("\n******************************************\n");
+                for (int i = 0; i < mL.size(); i++) {
+                        DMatch match = mL.get(i);
+                        System.out.printf("t: (%.2f, %.2f), q: (%.2f, %.2f), dis: %.2f\n",
+                                tKP.get(match.trainIdx).pt.x, tKP.get(match.trainIdx).pt.y,
+                                qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y,
+                                match.distance);
+                }
+                System.out.println("\n******************************************\n");
             }
         }
     }
