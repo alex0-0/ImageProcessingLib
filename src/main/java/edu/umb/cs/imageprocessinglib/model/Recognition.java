@@ -85,6 +85,10 @@ public final class Recognition implements Serializable {
                 '}';
     }
 
+    public Mat cropPixels(Mat oriImage) {
+        return cropPixels(oriImage, this.modelSize);
+    }
+
     public Mat cropPixels(Mat oriImage, int modelInSize) {
         float scaleX = (float) oriImage.size().width / modelInSize;
         float scaleY = (float) oriImage.size().height / modelInSize;
@@ -110,16 +114,6 @@ public final class Recognition implements Serializable {
     //read image from storage
     public Mat loadPixels() {
         return Imgcodecs.imread(TAG + "_" + uuid + ".png" );
-    }
-
-    //extract recognized object's feature points
-    public ImageFeature extractFeature(Mat oriImage, int modelInSize) {
-        return extractFeature(cropPixels(oriImage, modelInSize));
-    }
-
-    //extract recognized object's feature points
-    public ImageFeature extractFeature(Mat croppedImage) {
-        return ImageProcessor.extractFeatures(croppedImage);
     }
 
     public void saveFeature(Mat oriImage, int modelInSize) {
