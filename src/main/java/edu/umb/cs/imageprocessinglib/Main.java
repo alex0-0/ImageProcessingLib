@@ -15,6 +15,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -29,7 +30,8 @@ public class Main {
 //        testRobustFeature();
 //        testTFRobustFeature();
 //        testDistortion();
-//        extractObjectsInDir("src/main/resources/image/Motorcycle/");
+//        extractObjectsInDir("src/main/resources/image/horse/");
+//        testRegularFP("src/main/resources/image/horse/", "000.JPG");
         testRegularFP("src/main/resources/image/Motorcycle/", "000.JPG");
     }
 
@@ -409,25 +411,27 @@ public class Main {
         File dir = new File(filePath);
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
-            for (File f : directoryListing) {
+            List<File> files = new ArrayList<>(Arrays.asList(directoryListing));
+            files.sort(Comparator.comparing(File::getName));
+            for (File f : files) {
                 if (f.getName().equals(templateImg))
                     continue;
                 Mat qImg = ImageUtil.BufferedImage2Mat(ImageIO.read(f));
                 ImageFeature qIF = ImageProcessor.extractFeatures(qImg);
                 List<KeyPoint> qKP = qIF.getObjectKeypoints().toList();
 
-                MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
+//                MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
 //                MatOfDMatch m = ImageProcessor.matchImages(qIF, tIF);
-//                MatOfDMatch m = ImageProcessor.matchWithRegression(qIF, tIF);
-                List<DMatch> mL = new ArrayList<>();
-//                List<DMatch> mL = m.toList();
+                MatOfDMatch m = ImageProcessor.matchWithRegression(qIF, tIF);
+//                List<DMatch> mL = new ArrayList<>();
+                List<DMatch> mL = m.toList();
 
-                for (DMatch match : m.toList()) {
-                    if (match.distance < 300)
-                        mL.add(match);
-                }
-                m = new MatOfDMatch();
-                m.fromList(mL);
+//                for (DMatch match : m.toList()) {
+//                    if (match.distance < 200)
+//                        mL.add(match);
+//                }
+//                m = new MatOfDMatch();
+//                m.fromList(mL);
 
                 System.out.printf("%s Match number: %d, Precision: %f\n", f.getName(), m.total(), (float)m.total()/ tIF.getSize());
                 //display matches
@@ -439,14 +443,14 @@ public class Main {
                 mL.sort((o1, o2) -> {
                     return (int)(tKP.get(o1.trainIdx).pt.x - tKP.get(o2.trainIdx).pt.x);
                 });
-                for (int i = 0; i < mL.size(); i++) {
-                        DMatch match = mL.get(i);
-                        System.out.printf("t: (%.2f, %.2f), q: (%.2f, %.2f), dis: %.2f\n",
-                                tKP.get(match.trainIdx).pt.x, tKP.get(match.trainIdx).pt.y,
-                                qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y,
-                                match.distance);
-                }
-                System.out.println("\n******************************************\n");
+//                for (int i = 0; i < mL.size(); i++) {
+//                        DMatch match = mL.get(i);
+//                        System.out.printf("t: (%.2f, %.2f), q: (%.2f, %.2f), dis: %.2f\n",
+//                                tKP.get(match.trainIdx).pt.x, tKP.get(match.trainIdx).pt.y,
+//                                qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y,
+//                                match.distance);
+//                }
+//                System.out.println("\n******************************************\n");
             }
         }
     }
