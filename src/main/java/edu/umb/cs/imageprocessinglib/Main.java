@@ -9,6 +9,7 @@ import edu.umb.cs.imageprocessinglib.util.StorageUtil;
 import org.opencv.core.*;
 import org.opencv.features2d.Features2d;
 import org.opencv.features2d.FlannBasedMatcher;
+import org.opencv.features2d.ORB;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -29,6 +30,7 @@ public class Main {
 //        testDistortion();
 //        extractObjectsInDir("src/main/resources/image/horse/");
 //        testRegularFP("src/main/resources/image/horse/", "000.JPG");
+        orb  = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
         testRegularFP("src/main/resources/image/Motorcycle/", "000.JPG");
     }
 
@@ -398,13 +400,16 @@ public class Main {
     }
 
     static void testRegularFP(String filePath, String templateImg) throws IOException {
+        //hyperparameter for picking random feature points
+        int num = 600;
+
         File tImgFile = new File(filePath+templateImg);
         if (tImgFile == null || !tImgFile.isFile())
             return;
         Mat tImg = ImageUtil.BufferedImage2Mat(ImageIO.read(tImgFile));
         ImageFeature tIF = ImageProcessor.extractFeatures(tImg);
         List<KeyPoint> tKP = tIF.getObjectKeypoints().toList();
-        System.out.printf("template key points number: %d\n", tIF.getSize());
+//        System.out.printf("template key points number: %d\n", tIF.getSize());
         File dir = new File(filePath);
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
@@ -417,7 +422,12 @@ public class Main {
                 ImageFeature qIF = ImageProcessor.extractFeatures(qImg);
                 List<KeyPoint> qKP = qIF.getObjectKeypoints().toList();
 
-                MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
+                //randomly pick num feature points in template and query image
+                ImageFeature rTIF = pickNRandomFP(tImg, tIF, num);
+                ImageFeature rQIF = pickNRandomFP(qImg, qIF, num);
+                MatOfDMatch m = ImageProcessor.BFMatchImages(rQIF, rTIF);
+
+//                MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
 //                MatOfDMatch m = ImageProcessor.matchImages(qIF, tIF);
 //                MatOfDMatch m = ImageProcessor.matchWithRegression(qIF, tIF);
                 List<DMatch> mL = new ArrayList<>();
@@ -449,10 +459,12 @@ public class Main {
                 m = new MatOfDMatch();
                 m.fromList(mL);
 
-                System.out.printf("%s Match number: %d, Precision: %f\n", f.getName(), m.total(), (float)m.total()/ tIF.getSize());
+//                System.out.printf("%s Match number: %d, Precision: %f\n\n", f.getName(), m.total(), (float)m.total()/ tIF.getSize());
+                System.out.printf("%s %dx%d, Match number: %d, Precision: %f\n", f.getName(), rTIF.getSize(), rQIF.getSize(), m.total(), (float)m.total()/ tIF.getSize());
                 //display matches
                 Mat display = new Mat();
-                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), m, display);
+//                    Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), m, display);
+                Features2d.drawMatches(qImg, rQIF.getObjectKeypoints(), tImg, rTIF.getObjectKeypoints(), m, display);
                 ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
 
                 //print matched key points
@@ -473,7 +485,7 @@ public class Main {
                     System.out.printf("%d\t", mL.get(i).trainIdx);
                     if ((i+1)%20==0) System.out.println();
                 }
-                System.out.println("\n******************************************\n");
+                System.out.println("\n---------");
             }
         }
     }
@@ -502,5 +514,25 @@ public class Main {
                 }
             }
         }
+    }
+
+    static ORB orb;
+
+    public static ImageFeature pickNRandomFP(Mat image, ImageFeature imageFeature, int n) {
+        if (imageFeature.getSize() < n)
+            return imageFeature;
+        List<KeyPoint> kps = imageFeature.getObjectKeypoints().toList();
+        Mat des = new Mat();
+        kps = pickNRandom(kps, n);
+        MatOfKeyPoint matOfKeyPoint = new MatOfKeyPoint();;
+        matOfKeyPoint.fromList(kps);
+        orb.compute(image, matOfKeyPoint, des);
+        return new ImageFeature(matOfKeyPoint, des);
+    }
+
+    public static List<KeyPoint> pickNRandom(List<KeyPoint> lst, int n) {
+        List<KeyPoint> copy = new LinkedList<KeyPoint>(lst);
+        Collections.shuffle(copy);
+        return copy.subList(0, n);
     }
 }
