@@ -14,10 +14,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import static org.opencv.core.CvType.CV_32F;
 
@@ -407,7 +404,7 @@ public class Main {
         Mat tImg = ImageUtil.BufferedImage2Mat(ImageIO.read(tImgFile));
         ImageFeature tIF = ImageProcessor.extractFeatures(tImg);
         List<KeyPoint> tKP = tIF.getObjectKeypoints().toList();
-        System.out.printf("template key points numebr: %d\n", tIF.getSize());
+        System.out.printf("template key points number: %d\n", tIF.getSize());
         File dir = new File(filePath);
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
@@ -420,18 +417,37 @@ public class Main {
                 ImageFeature qIF = ImageProcessor.extractFeatures(qImg);
                 List<KeyPoint> qKP = qIF.getObjectKeypoints().toList();
 
-//                MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
+                MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
 //                MatOfDMatch m = ImageProcessor.matchImages(qIF, tIF);
-                MatOfDMatch m = ImageProcessor.matchWithRegression(qIF, tIF);
-//                List<DMatch> mL = new ArrayList<>();
-                List<DMatch> mL = m.toList();
+//                MatOfDMatch m = ImageProcessor.matchWithRegression(qIF, tIF);
+                List<DMatch> mL = new ArrayList<>();
+//                List<DMatch> mL = m.toList();
+                Map<Integer, List<DMatch>> recorder = new HashMap<>();
 
-//                for (DMatch match : m.toList()) {
-//                    if (match.distance < 200)
+                for (DMatch match : m.toList()) {
+                    if (match.distance < 300) {
+                        if (recorder.get(match.trainIdx) == null) {
+                            recorder.put(match.trainIdx, new ArrayList<>());
+                        }
+                        recorder.get(match.trainIdx).add(match);
 //                        mL.add(match);
-//                }
-//                m = new MatOfDMatch();
-//                m.fromList(mL);
+                    }
+                }
+                //if multiple query points are matched to the same query point, keep the match with minimum distance
+                for (Integer i : recorder.keySet()) {
+                    DMatch minDisMatch = null;
+                    float minDis = 999999999f;
+                    for (DMatch dMatch : recorder.get(i)) {
+                        if (dMatch.distance < minDis) {
+                            minDisMatch = dMatch;
+                            minDis = dMatch.distance;
+                        }
+                    }
+                    if (minDisMatch != null)
+                        mL.add(minDisMatch);
+                }
+                m = new MatOfDMatch();
+                m.fromList(mL);
 
                 System.out.printf("%s Match number: %d, Precision: %f\n", f.getName(), m.total(), (float)m.total()/ tIF.getSize());
                 //display matches
@@ -440,9 +456,9 @@ public class Main {
                 ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
 
                 //print matched key points
-                mL.sort((o1, o2) -> {
-                    return (int)(tKP.get(o1.trainIdx).pt.x - tKP.get(o2.trainIdx).pt.x);
-                });
+//                mL.sort((o1, o2) -> {
+//                    return (int)(tKP.get(o1.trainIdx).pt.x - tKP.get(o2.trainIdx).pt.x);
+//                });
 //                for (int i = 0; i < mL.size(); i++) {
 //                        DMatch match = mL.get(i);
 //                        System.out.printf("t: (%.2f, %.2f), q: (%.2f, %.2f), dis: %.2f\n",
@@ -450,7 +466,14 @@ public class Main {
 //                                qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y,
 //                                match.distance);
 //                }
-//                System.out.println("\n******************************************\n");
+                mL.sort((o1, o2) -> {
+                    return (int)(o1.trainIdx - o2.trainIdx);
+                });
+                for (int i = 0; i < mL.size(); i++) {
+                    System.out.printf("%d\t", mL.get(i).trainIdx);
+                    if ((i+1)%20==0) System.out.println();
+                }
+                System.out.println("\n******************************************\n");
             }
         }
     }
