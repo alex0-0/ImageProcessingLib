@@ -401,7 +401,7 @@ public class Main {
 
     static void testRegularFP(String filePath, String templateImg) throws IOException {
         //hyperparameter for picking random feature points
-        int num = 600;
+        int num = 200;
 
         File tImgFile = new File(filePath+templateImg);
         if (tImgFile == null || !tImgFile.isFile())
@@ -424,7 +424,7 @@ public class Main {
 
                 //randomly pick num feature points in template and query image
                 ImageFeature rTIF = pickNRandomFP(tImg, tIF, num);
-                ImageFeature rQIF = pickNRandomFP(qImg, qIF, num);
+                ImageFeature rQIF = qIF;
                 MatOfDMatch m = ImageProcessor.BFMatchImages(rQIF, rTIF);
 
 //                MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
