@@ -3,6 +3,7 @@ package edu.umb.cs.imageprocessinglib;
 import edu.umb.cs.imageprocessinglib.model.ImageFeature;
 import edu.umb.cs.imageprocessinglib.model.Recognition;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
+import javafx.util.Pair;
 import org.opencv.core.*;
 import org.opencv.features2d.Features2d;
 import org.opencv.features2d.ORB;
@@ -12,6 +13,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class RegularFPTest {
 
@@ -19,103 +21,65 @@ public class RegularFPTest {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 //        extractObjectsInDir("src/main/resources/image/horse/");
 //        testRegularFP("src/main/resources/image/horse/", "000.JPG");
-        orb  = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
-        testRegularFP("src/main/resources/image/Motorcycle/", "000.JPG");
+        orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
+//        testRegularFP("src/main/resources/image/Motorcycle/", "000.JPG");
+        testMaxMin("src/main/resources/image/Motorcycle/", "000.JPG");
     }
 
     static void testRegularFP(String filePath, String templateImg) throws IOException {
         //hyperparameter for picking random feature points
-        int num = 500;
+        int num = 200;
 
-        File tImgFile = new File(filePath+templateImg);
+        File tImgFile = new File(filePath + templateImg);
         if (tImgFile == null || !tImgFile.isFile())
             return;
         Mat tImg = ImageUtil.BufferedImage2Mat(ImageIO.read(tImgFile));
-        ImageFeature tIF = ImageProcessor.extractORBFeatures(tImg,300);
+        ImageFeature tIF = ImageProcessor.extractORBFeatures(tImg, 200);
         List<KeyPoint> tKP = tIF.getObjectKeypoints().toList();
 //        System.out.printf("template key points number: %d\n", tIF.getSize());
         File dir = new File(filePath);
         File[] directoryListing = dir.listFiles();
         long totalTime = 0;
+        System.out.printf("{| class=\"wikitable\"\n |+%dX500\n |- \n!file name \n!precision\n !matched template FP\n |- \n", num);
         if (directoryListing != null) {
             List<File> files = new ArrayList<>(Arrays.asList(directoryListing));
             files.sort(Comparator.comparing(File::getName));
             for (File f : files) {
                 if (f.getName().equals(templateImg))
                     continue;
+                System.out.printf("!%s", f.getName());
                 Mat qImg = ImageUtil.BufferedImage2Mat(ImageIO.read(f));
 //                ImageFeature qIF = ImageProcessor.extractFeatures(qImg);
-                ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 300);
+                ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 500);
                 List<KeyPoint> qKP = qIF.getObjectKeypoints().toList();
 
                 //randomly pick num feature points in template and query image
                 ImageFeature rTIF = pickNRandomFP(tImg, tIF, num);
                 ImageFeature rQIF = pickNRandomFP(qImg, qIF, 500);
 //                ImageFeature rQIF = qIF;
-                long startTime = System.currentTimeMillis();
-                MatOfDMatch m = ImageProcessor.BFMatchImages(rQIF, rTIF);
-                totalTime += (System.currentTimeMillis()-startTime);
-
-//                MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
-//                MatOfDMatch m = ImageProcessor.matchImages(qIF, tIF);
-//                MatOfDMatch m = ImageProcessor.matchWithRegression(qIF, tIF);
-                List<DMatch> mL = new ArrayList<>();
-//                List<DMatch> mL = m.toList();
-                Map<Integer, List<DMatch>> recorder = new HashMap<>();
-
-                for (DMatch match : m.toList()) {
-                    if (match.distance < 300) {
-                        if (recorder.get(match.trainIdx) == null) {
-                            recorder.put(match.trainIdx, new ArrayList<>());
-                        }
-                        recorder.get(match.trainIdx).add(match);
-//                        mL.add(match);
-                    }
-                }
-                //if multiple query points are matched to the same query point, keep the match with minimum distance
-                for (Integer i : recorder.keySet()) {
-                    DMatch minDisMatch = null;
-                    float minDis = 999999999f;
-                    for (DMatch dMatch : recorder.get(i)) {
-                        if (dMatch.distance < minDis) {
-                            minDisMatch = dMatch;
-                            minDis = dMatch.distance;
-                        }
-                    }
-                    if (minDisMatch != null)
-                        mL.add(minDisMatch);
-                }
-                m = new MatOfDMatch();
+                List<DMatch> mL = matchImage(qIF, tIF);
+                MatOfDMatch m = new MatOfDMatch();
                 m.fromList(mL);
 
 //                System.out.printf("%s Match number: %d, Precision: %f\n\n", f.getName(), m.total(), (float)m.total()/ tIF.getSize());
-                System.out.printf("%s %dx%d, Match number: %d, Precision: %f\n", f.getName(), rTIF.getSize(), rQIF.getSize(), m.total(), (float)m.total()/ tIF.getSize());
+//                System.out.printf("%s %dx%d, Match number: %d, Precision: %f\n", f.getName(), rTIF.getSize(), rQIF.getSize(), m.total(), (float)m.total()/ rTIF.getSize());
+                System.out.printf("\n|%f\n", (float) m.total() / rTIF.getSize());
                 //display matches
                 Mat display = new Mat();
 //                    Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), m, display);
                 Features2d.drawMatches(qImg, rQIF.getObjectKeypoints(), tImg, rTIF.getObjectKeypoints(), m, display);
 //                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
 
-                //print matched key points
-//                mL.sort((o1, o2) -> {
-//                    return (int)(tKP.get(o1.trainIdx).pt.x - tKP.get(o2.trainIdx).pt.x);
-//                });
-//                for (int i = 0; i < mL.size(); i++) {
-//                        DMatch match = mL.get(i);
-//                        System.out.printf("t: (%.2f, %.2f), q: (%.2f, %.2f), dis: %.2f\n",
-//                                tKP.get(match.trainIdx).pt.x, tKP.get(match.trainIdx).pt.y,
-//                                qKP.get(match.queryIdx).pt.x, qKP.get(match.queryIdx).pt.y,
-//                                match.distance);
-//                }
-                mL.sort((o1, o2) -> {
-                    return (int)(o1.trainIdx - o2.trainIdx);
-                });
+                System.out.print("| ");
                 for (int i = 0; i < mL.size(); i++) {
-                    System.out.printf("%d\t", mL.get(i).trainIdx);
-                    if ((i+1)%20==0) System.out.println();
+                    System.out.printf("%d ", mL.get(i).trainIdx);
+//                    System.out.printf("%d\t", mL.get(i).trainIdx);
+//                    if ((i+1)%20==0) System.out.println();
                 }
-                System.out.println("\n---------");
+//                System.out.println("\n---------");
+                System.out.println("\n|-");
             }
+            System.out.println("|}");
         }
 //        System.out.printf("average time:%f", (float)totalTime/(float)(directoryListing.length-1)/1000.0);
     }
@@ -154,7 +118,8 @@ public class RegularFPTest {
         List<KeyPoint> kps = imageFeature.getObjectKeypoints().toList();
         Mat des = new Mat();
         kps = pickNRandom(kps, n);
-        MatOfKeyPoint matOfKeyPoint = new MatOfKeyPoint();;
+        MatOfKeyPoint matOfKeyPoint = new MatOfKeyPoint();
+        ;
         matOfKeyPoint.fromList(kps);
         orb.compute(image, matOfKeyPoint, des);
         return new ImageFeature(matOfKeyPoint, des);
@@ -165,4 +130,163 @@ public class RegularFPTest {
         Collections.shuffle(copy);
         return copy.subList(0, n);
     }
+
+    static void testMaxMin(String filePath, String templateImg) throws IOException {
+        File tImgFile = new File(filePath + templateImg);
+        //if template image can't be found, return
+        if (tImgFile == null || !tImgFile.isFile())
+            return;
+        Mat tImg = ImageUtil.BufferedImage2Mat(ImageIO.read(tImgFile));
+        ImageFeature tIF = ImageProcessor.extractORBFeatures(tImg, 500);
+
+        List<Mat> testImages = new ArrayList<>();
+        for (int i=5; i <= 35; i+=5) {
+            String fileName = filePath + String.format("%03d.JPG", i);
+            testImages.add(ImageUtil.BufferedImage2Mat(ImageIO.read(new File(fileName))));
+        }
+        List<List<Integer>> fpTrack = analyzeFPsInImages(tIF, testImages);
+        Pair<Integer, List<Integer>> candidates = minMax(fpTrack, 100);
+        System.out.printf("min: %d, %d candidates:%s\n",candidates.getKey(), candidates.getValue().size(), candidates.getValue());
+
+        List<KeyPoint> tKP = tIF.getObjectKeypoints().toList();
+        List<KeyPoint> kps = new ArrayList<>();
+        for (int i : candidates.getValue()) {
+            kps.add(tKP.get(i));
+        }
+        Mat des = new Mat();
+        MatOfKeyPoint matOfKeyPoint = new MatOfKeyPoint();
+        matOfKeyPoint.fromList(kps);
+        orb.compute(tImg, matOfKeyPoint, des);
+        ImageFeature imageFeature = new ImageFeature(matOfKeyPoint, des);
+
+        int f = 5;
+        for (Mat img : testImages) {
+            ImageFeature qIF = ImageProcessor.extractORBFeatures(img, 500);
+            List<DMatch> matches = matchImage(qIF, imageFeature);
+            System.out.printf("%s: %f\n", String.format("%03d.JPG", f), (float) matches.size() / imageFeature.getSize());
+            f += 5;
+        }
+    }
+
+    /**
+     * Given a list of candidates, which is represent by a range from 0 to a specific number, this method finds out those
+     * which can maximize the minimum counter value.
+     * @param input for each target, this argument uses a list containing all qualified candidates
+     * @param num   number of returned candidates
+     * @return an integer indicating the minimum counter value and a list containing most promising candidates
+     */
+    static Pair<Integer, List<Integer>> minMax(List<List<Integer>> input, int num) {
+        List<Integer> ret = new ArrayList<>();
+        List<Integer> counters = new ArrayList<>();
+        Map<Integer, Set<Integer>> tracker = new HashMap<>();   //using set rather than list just in case the input is not properly preprocessed
+
+        //record input into a hashmap, which use candidate as key and a list containing matched target as value
+        for (int i=0; i < input.size(); i++) {
+            for (int k=0; k < input.get(i).size(); k++) {
+                int key = input.get(i).get(k);
+                if (tracker.get(key) == null) {
+                    tracker.put(key, new HashSet<>());
+                }
+                //for every candidates, use a list to record its matched target
+                tracker.get(key).add(i);
+            }
+        }
+
+        for (int i=0; i < input.size(); i++)
+            counters.add(0);
+
+        int min = 0;
+        while (ret.size() < num) {
+            List<Integer> mins = new ArrayList<>();
+            //find out minimums
+            for (int i=0; i < counters.size(); i++) {
+                if (counters.get(i)<=min)
+                    mins.add(i);
+            }
+            int max = 0;
+            int maxKey = -1;
+            for (int i : tracker.keySet()) {
+                int c = 0;  //count how many mins can get increased if this candidate is selected
+                Set<Integer> ts = tracker.get(i);
+                for (int m : mins) {
+                    if (ts.contains(m))
+                        c++;
+                }
+                if (c > max) {
+                    max = c;
+                    maxKey = i;
+                }
+            }
+
+            //no more optimization can be done, comment this condition if you wanna keep adding new candidate
+            if (maxKey == -1)
+                break;
+
+            //update
+            //all mins get a new matched candidate
+            if (max >= mins.size())
+                min++;
+            if (maxKey != -1)
+                ret.add(maxKey);
+            for (int i : tracker.get(maxKey))
+                counters.set(i, counters.get(i)+1);
+            tracker.remove(maxKey);
+        }
+
+        return new Pair<Integer, List<Integer>>(min, ret);
+    }
+
+    //return a list of lists containing the index of matched feature points
+    public static List<List<Integer>> analyzeFPsInImages(ImageFeature tIF, List<Mat> images) {
+        List<List<Integer>> ret = new ArrayList<>();
+        List<KeyPoint> tKP = tIF.getObjectKeypoints().toList();
+
+        for (Mat img : images) {
+            ImageFeature qIF = ImageProcessor.extractORBFeatures(img);
+            List<DMatch> mL = matchImage(qIF, tIF);
+            ret.add(mL.stream().map(o->o.trainIdx).collect(Collectors.toList()));
+        }
+        return ret;
+    }
+
+    static List<DMatch> matchImage(ImageFeature qIF, ImageFeature tIF) {
+        MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
+//                MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
+//                MatOfDMatch m = ImageProcessor.matchImages(qIF, tIF);
+//                MatOfDMatch m = ImageProcessor.matchWithRegression(qIF, tIF);
+        List<DMatch> mL = new ArrayList<>();
+//                List<DMatch> mL = m.toList();
+        Map<Integer, List<DMatch>> recorder = new HashMap<>();
+
+        for (DMatch match : m.toList()) {
+            //filter out those unqualified matches
+            if (match.distance < 300) {
+                if (recorder.get(match.trainIdx) == null) {
+                    recorder.put(match.trainIdx, new ArrayList<>());
+                }
+                recorder.get(match.trainIdx).add(match);
+//                        mL.add(match);
+            }
+        }
+        //if multiple query points are matched to the same template point, keep the match with minimum distance
+        for (Integer i : recorder.keySet()) {
+            DMatch minDisMatch = null;
+            float minDis = Float.MAX_VALUE;
+            for (DMatch dMatch : recorder.get(i)) {
+                if (dMatch.distance < minDis) {
+                    minDisMatch = dMatch;
+                    minDis = dMatch.distance;
+                }
+            }
+            if (minDisMatch != null)
+                mL.add(minDisMatch);
+        }
+
+        //display matches
+        mL.sort((o1, o2) -> {
+            return (int) (o1.trainIdx - o2.trainIdx);
+        });
+        return mL;
+    }
+
 }
