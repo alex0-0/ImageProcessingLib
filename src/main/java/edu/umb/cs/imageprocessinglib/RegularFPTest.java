@@ -23,8 +23,8 @@ public class RegularFPTest {
 //        testRegularFP("src/main/resources/image/horse/", "Motorcycle_s1.00.JPG");
         orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
 //        testRegularFP("src/main/resources/image/Motorcycle/", "Motorcycle_s1.00.JPG");
-//        testMaxMin("src/main/resources/image/Motorcycle/", "Motorcycle_s1.00.JPG");
-        scaleDownImage("src/main/resources/image/Motorcycle/Motorcycle_s1.00.JPG");
+        testMaxMin("src/main/resources/image/Motorcycle/", "000.JPG");
+//        scaleDownImage("src/main/resources/image/horse/000.JPG");
     }
 
     static void testRegularFP(String filePath, String templateImg) throws IOException {
@@ -88,12 +88,14 @@ public class RegularFPTest {
     static void scaleDownImage(String filePath) throws IOException {
         File f = new File(filePath);
         Mat img = ImageUtil.BufferedImage2Mat(ImageIO.read(f));
+        String dirPath = f.getParent()+"_scale";
+        new File(dirPath).mkdir();
         for (float s=0.95f; s >= 0.5f; s-=0.05f) {
             Mat sImg = ImageUtil.scaleImage(img, s);
 //            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(sImg));
-            ImageUtil.saveImage(ImageUtil.Mat2BufferedImage(sImg), f.getParent()+"_s"+String.format("%.2f.JPG",s));
+            ImageUtil.saveImage(ImageUtil.Mat2BufferedImage(sImg), dirPath + "/s"+String.format("%.2f.JPG",s));
         }
-
+        ImageUtil.saveImage(ImageUtil.Mat2BufferedImage(img), dirPath + "/s1.00.JPG");
     }
 
     static void extractObjectsInDir(String filePath) throws IOException {
@@ -152,12 +154,18 @@ public class RegularFPTest {
         ImageFeature tIF = ImageProcessor.extractORBFeatures(tImg, 500);
 
         List<Mat> testImages = new ArrayList<>();
-        for (int i=-5; i >= -35; i-=5) {
+        for (int i=5; i <= 35; i+=5) {
             String fileName = filePath + String.format("%03d.JPG", i);
             testImages.add(ImageUtil.BufferedImage2Mat(ImageIO.read(new File(fileName))));
         }
         List<List<Integer>> fpTrack = analyzeFPsInImages(tIF, testImages);
-        Pair<Integer, List<Integer>> candidates = minMax(fpTrack, 100);
+        List<Integer> sizes = fpTrack.stream().map(o->o.size()).collect(Collectors.toList());
+        int num = 100;
+        for (int i : sizes) {
+           if (i < num)
+               num = i;
+        }
+        Pair<Integer, List<Integer>> candidates = minMax(fpTrack, num);
         System.out.printf("original template num: %d, min: %d, %d candidates:%s\n",tIF.getSize(), candidates.getKey(), candidates.getValue().size(), candidates.getValue());
 
         List<KeyPoint> tKP = tIF.getObjectKeypoints().toList();
