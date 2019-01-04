@@ -22,8 +22,10 @@ public class RegularFPTest {
 //        extractObjectsInDir("src/main/resources/image/horse/");
 //        testRegularFP("src/main/resources/image/horse/", "Motorcycle_s1.00.JPG");
         orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
-//        testRegularFP("src/main/resources/image/Motorcycle/", "Motorcycle_s1.00.JPG");
-        testMaxMin("src/main/resources/image/Motorcycle/", "000.JPG");
+//        testRegularFP("src/main/resources/image/Motorcycle/", "000.JPG");
+//        testRegularFP("src/main/resources/image/horse/", "000.JPG");
+//        testMaxMin("src/main/resources/image/Motorcycle/", "000.JPG");
+        testMaxMin("src/main/resources/image/horse/", "000.JPG");
 //        scaleDownImage("src/main/resources/image/horse/000.JPG");
     }
 
@@ -179,8 +181,8 @@ public class RegularFPTest {
         orb.compute(tImg, matOfKeyPoint, des);
         ImageFeature imageFeature = new ImageFeature(matOfKeyPoint, des);
 
-        File dir = new File(filePath);
-        File[] directoryListing = dir.listFiles();
+//        for (Mat qImg : testImages) {
+        File dir = new File(filePath); File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
             List<File> files = new ArrayList<>(Arrays.asList(directoryListing));
             files.sort(Comparator.comparing(File::getName));
@@ -190,7 +192,13 @@ public class RegularFPTest {
                 Mat qImg = ImageUtil.BufferedImage2Mat(ImageIO.read(f));
                 ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 500);
                 List<DMatch> matches = matchImage(qIF, imageFeature);
+//                MatOfDMatch m = new MatOfDMatch();
+//                m.fromList(matches);
+////            System.out.printf("%f\n", (float) matches.size() / imageFeature.getSize());
                 System.out.printf("%s: %f\n", f.getName(), (float) matches.size() / imageFeature.getSize());
+//                Mat display = new Mat();
+//                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, imageFeature.getObjectKeypoints(), m, display);
+//                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
             }
         }
     }
