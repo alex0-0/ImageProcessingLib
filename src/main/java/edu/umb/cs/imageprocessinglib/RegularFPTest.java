@@ -20,10 +20,11 @@ public class RegularFPTest {
     public static void main(String[] args) throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 //        extractObjectsInDir("src/main/resources/image/horse/");
-//        testRegularFP("src/main/resources/image/horse/", "000.JPG");
+//        testRegularFP("src/main/resources/image/horse/", "Motorcycle_s1.00.JPG");
         orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
-//        testRegularFP("src/main/resources/image/Motorcycle/", "000.JPG");
-        testMaxMin("src/main/resources/image/Motorcycle/", "000.JPG");
+//        testRegularFP("src/main/resources/image/Motorcycle/", "Motorcycle_s1.00.JPG");
+//        testMaxMin("src/main/resources/image/Motorcycle/", "Motorcycle_s1.00.JPG");
+        scaleDownImage("src/main/resources/image/Motorcycle/Motorcycle_s1.00.JPG");
     }
 
     static void testRegularFP(String filePath, String templateImg) throws IOException {
@@ -84,6 +85,17 @@ public class RegularFPTest {
 //        System.out.printf("average time:%f", (float)totalTime/(float)(directoryListing.length-1)/1000.0);
     }
 
+    static void scaleDownImage(String filePath) throws IOException {
+        File f = new File(filePath);
+        Mat img = ImageUtil.BufferedImage2Mat(ImageIO.read(f));
+        for (float s=0.95f; s >= 0.5f; s-=0.05f) {
+            Mat sImg = ImageUtil.scaleImage(img, s);
+//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(sImg));
+            ImageUtil.saveImage(ImageUtil.Mat2BufferedImage(sImg), f.getParent()+"_s"+String.format("%.2f.JPG",s));
+        }
+
+    }
+
     static void extractObjectsInDir(String filePath) throws IOException {
         ObjectDetector objectDetector = new ObjectDetector();
         objectDetector.init();
@@ -140,7 +152,7 @@ public class RegularFPTest {
         ImageFeature tIF = ImageProcessor.extractORBFeatures(tImg, 500);
 
         List<Mat> testImages = new ArrayList<>();
-        for (int i=5; i <= 35; i+=5) {
+        for (int i=-5; i >= -35; i-=5) {
             String fileName = filePath + String.format("%03d.JPG", i);
             testImages.add(ImageUtil.BufferedImage2Mat(ImageIO.read(new File(fileName))));
         }
