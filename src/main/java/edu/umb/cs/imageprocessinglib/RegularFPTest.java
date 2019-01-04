@@ -146,7 +146,7 @@ public class RegularFPTest {
         }
         List<List<Integer>> fpTrack = analyzeFPsInImages(tIF, testImages);
         Pair<Integer, List<Integer>> candidates = minMax(fpTrack, 100);
-        System.out.printf("min: %d, %d candidates:%s\n",candidates.getKey(), candidates.getValue().size(), candidates.getValue());
+        System.out.printf("original template num: %d, min: %d, %d candidates:%s\n",tIF.getSize(), candidates.getKey(), candidates.getValue().size(), candidates.getValue());
 
         List<KeyPoint> tKP = tIF.getObjectKeypoints().toList();
         List<KeyPoint> kps = new ArrayList<>();
@@ -159,12 +159,19 @@ public class RegularFPTest {
         orb.compute(tImg, matOfKeyPoint, des);
         ImageFeature imageFeature = new ImageFeature(matOfKeyPoint, des);
 
-        int f = 5;
-        for (Mat img : testImages) {
-            ImageFeature qIF = ImageProcessor.extractORBFeatures(img, 500);
-            List<DMatch> matches = matchImage(qIF, imageFeature);
-            System.out.printf("%s: %f\n", String.format("%03d.JPG", f), (float) matches.size() / imageFeature.getSize());
-            f += 5;
+        File dir = new File(filePath);
+        File[] directoryListing = dir.listFiles();
+        if (directoryListing != null) {
+            List<File> files = new ArrayList<>(Arrays.asList(directoryListing));
+            files.sort(Comparator.comparing(File::getName));
+            for (File f : files) {
+                if (f.getName().equals(templateImg))
+                    continue;
+                Mat qImg = ImageUtil.BufferedImage2Mat(ImageIO.read(f));
+                ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 500);
+                List<DMatch> matches = matchImage(qIF, imageFeature);
+                System.out.printf("%s: %f\n", f.getName(), (float) matches.size() / imageFeature.getSize());
+            }
         }
     }
 
