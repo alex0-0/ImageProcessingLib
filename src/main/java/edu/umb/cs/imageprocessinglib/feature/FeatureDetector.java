@@ -2,6 +2,7 @@ package edu.umb.cs.imageprocessinglib.feature;
 
 import edu.umb.cs.imageprocessinglib.model.DescriptorType;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
+import javafx.util.Pair;
 import org.opencv.core.DMatch;
 import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
@@ -134,17 +135,38 @@ public class FeatureDetector {
      * @return boolean indicates whether the method is done without problem
      */
     public boolean sortedRobustFeatures(Mat img, List<Mat> distortedImages, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int filterThreshold, int num) {
-        ArrayList<MatOfKeyPoint> listOfKeyPoints = new ArrayList<>();
-        ArrayList<Mat> listOfDescriptors = new ArrayList<>();
-        MatOfKeyPoint kp = new MatOfKeyPoint();
-        Mat des = new Mat();
-        ArrayList<MatOfDMatch> listOfMatches = new ArrayList<>();
+//        ArrayList<MatOfKeyPoint> listOfKeyPoints = new ArrayList<>();
+//        ArrayList<Mat> listOfDescriptors = new ArrayList<>();
+//        MatOfKeyPoint kp = new MatOfKeyPoint();
+//        Mat des = new Mat();
+//        ArrayList<MatOfDMatch> listOfMatches = new ArrayList<>();
 
-        List<HashSet<Integer>> tracker = trackFeatures(img, distortedImages, kp, des, listOfKeyPoints, listOfDescriptors, listOfMatches, type);
+//        List<HashSet<Integer>> tracker = trackFeatures(img, distortedImages, kp, des, listOfKeyPoints, listOfDescriptors, listOfMatches, type);
+
+        MatOfKeyPoint kp = new MatOfKeyPoint();
+        List<List<Integer>> fpTrack = analyzeFPsInImages(img, distortedImages, kp, type);
+        List<Integer> sizes = fpTrack.stream().map(o->o.size()).collect(Collectors.toList());
+//        int num = 100;
+        for (int i : sizes) {
+            if (i < num)
+                num = i/10*10;
+        }
+        List<Integer> candidates = minMax(fpTrack, num);
+        List<KeyPoint> tKP = kp.toList();
+        List<KeyPoint> kpList = new ArrayList<>();
+        for (int i : candidates) {
+            kpList.add(tKP.get(i));
+        }
+        keyPoints.fromList(kpList);
+
+        if (type == DescriptorType.SURF)
+            surf.compute(img, keyPoints, descriptors);
+        else if (type == DescriptorType.ORB)
+            orb.compute(img, keyPoints, descriptors);
+        return true;
 
 /*
 print out matching results
- */
         System.out.printf("\tqID\ttotal");
         for(int i=0;i<distortedImages.size();i++){
             System.out.printf("\tdImg%d",i);
@@ -206,9 +228,122 @@ print out matching results
         des.release();
 
         return true;
+ */
     }
 
+    //return a list of lists containing the index of matched feature points
+    public List<List<Integer>> analyzeFPsInImages(Mat tImg, List<Mat> images, MatOfKeyPoint tKPs, DescriptorType type) {
 
+        List<List<Integer>> ret = new ArrayList<>();
+
+        Mat tDes = new Mat();
+        //calculate original image's key points and descriptors
+        extractFeatures(tImg, tKPs, tDes, type);
+
+        for (Mat img : images) {
+            MatOfKeyPoint k = new MatOfKeyPoint();
+            Mat d = new Mat();
+            extractFeatures(img, k, d, type);
+            MatOfDMatch m = FeatureMatcher.getInstance().BFMatchFeature(d, tDes, type);
+            List<DMatch> mL = new ArrayList<>();
+
+            Map<Integer, List<DMatch>> recorder = new HashMap<>();
+            for (DMatch match : m.toList()) {
+                //filter out those unqualified matches
+                if (match.distance < 300) {
+                    if (recorder.get(match.trainIdx) == null) {
+                        recorder.put(match.trainIdx, new ArrayList<>());
+                    }
+                    recorder.get(match.trainIdx).add(match);
+                }
+            }
+            //if multiple query points are matched to the same template point, keep the match with minimum distance
+            for (Integer i : recorder.keySet()) {
+                DMatch minDisMatch = null;
+                float minDis = Float.MAX_VALUE;
+                for (DMatch dMatch : recorder.get(i)) {
+                    if (dMatch.distance < minDis) {
+                        minDisMatch = dMatch;
+                        minDis = dMatch.distance;
+                    }
+                }
+                if (minDisMatch != null)
+                    mL.add(minDisMatch);
+            }
+            ret.add(mL.stream().map(o->o.trainIdx).collect(Collectors.toList()));
+        }
+        return ret;
+    }
+
+    /**
+     * Given a list of candidates, which is represent by a range from 0 to a specific number, this method finds out those
+     * which can maximize the minimum counter value.
+     * @param input for each target, this argument uses a list containing all qualified candidates
+     * @param num   number of returned candidates
+     * @return an integer indicating the minimum counter value and a list containing most promising candidates
+     */
+//    static Pair<Integer, List<Integer>> minMax(List<List<Integer>> input, int num) {
+    static List<Integer> minMax(List<List<Integer>> input, int num) {
+        List<Integer> ret = new ArrayList<>();
+        List<Integer> counters = new ArrayList<>();
+        Map<Integer, Set<Integer>> tracker = new HashMap<>();   //using set rather than list just in case the input is not properly preprocessed
+
+        //record input into a hashmap, which use candidate as key and a list containing matched target as value
+        for (int i=0; i < input.size(); i++) {
+            for (int k=0; k < input.get(i).size(); k++) {
+                int key = input.get(i).get(k);
+                if (tracker.get(key) == null) {
+                    tracker.put(key, new HashSet<>());
+                }
+                //for every candidates, use a list to record its matched target
+                tracker.get(key).add(i);
+            }
+        }
+
+        for (int i=0; i < input.size(); i++)
+            counters.add(0);
+
+        int min = 0;
+        while (ret.size() < num) {
+            List<Integer> mins = new ArrayList<>();
+            //find out minimums
+            for (int i=0; i < counters.size(); i++) {
+                if (counters.get(i)<=min)
+                    mins.add(i);
+            }
+            int max = 0;
+            int maxKey = -1;
+            for (int i : tracker.keySet()) {
+                int c = 0;  //count how many mins can get increased if this candidate is selected
+                Set<Integer> ts = tracker.get(i);
+                for (int m : mins) {
+                    if (ts.contains(m))
+                        c++;
+                }
+                if (c > max) {
+                    max = c;
+                    maxKey = i;
+                }
+            }
+
+            //no more optimization can be done, comment this condition if you wanna keep adding new candidate
+            if (maxKey == -1)
+                break;
+
+            //update
+            //all mins get a new matched candidate
+            if (max >= mins.size())
+                min++;
+            if (maxKey != -1)
+                ret.add(maxKey);
+            for (int i : tracker.get(maxKey))
+                counters.set(i, counters.get(i)+1);
+            tracker.remove(maxKey);
+        }
+
+//        return new Pair<Integer, List<Integer>>(min, ret);
+        return ret;
+    }
 
 
 
@@ -311,24 +446,6 @@ print out matching results
 
             r.add(ImageUtil.changeImagePerspective(image, corners, target));
             r.add(ImageUtil.changeImagePerspective(image, target, corners));
-
-//            Mat cornersMat = Converters.vector_Point2f_to_Mat(corners);
-//            Mat targetMat = Converters.vector_Point2f_to_Mat(target);
-//            Mat trans = Imgproc.getPerspectiveTransform(cornersMat, targetMat);
-//
-//            Mat proj = new Mat();
-//            Imgproc.warpPerspective(image, proj, trans, new Size(image.cols(), image.rows()));
-//
-//            Mat revertProj = new Mat();
-//            trans.release();
-//            trans = Imgproc.getPerspectiveTransform(targetMat, cornersMat);
-//            Imgproc.warpPerspective(image, revertProj, trans, new Size(image.cols(), image.rows()));
-//
-//            r.add(proj);
-//            r.add(revertProj);
-//
-//            //release resources
-//            trans.release();
         }
 
         return r;
@@ -365,22 +482,6 @@ print out matching results
 
             r.add(ImageUtil.affineImage(image, original, targetA));
             r.add(ImageUtil.affineImage(image, targetA, original));
-
-            //calculate the affine transformation matrix,
-            //refer to https://stackoverflow.com/questions/22954239/given-three-points-compute-affine-transformation
-//            Mat affineTransformA = Imgproc.getAffineTransform(originalMat, targetMatA);
-//            Mat affineTransformB = Imgproc.getAffineTransform(targetMatA, originalMat);
-//
-//            Mat affineA = new Mat();
-//            Mat affineB = new Mat();
-//            Imgproc.warpAffine(image, affineA, affineTransformA, new Size(image.cols(), image.rows()));
-//            Imgproc.warpAffine(image, affineB, affineTransformB, new Size(image.cols(), image.rows()));
-//            r.add(affineA);
-//            r.add(affineB);
-//
-//            //release resources
-//            affineTransformA.release();
-//            affineTransformB.release();
         }
 
         originalMat.release();

@@ -24,8 +24,9 @@ public class RegularFPTest {
         orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
 //        testRegularFP("src/main/resources/image/Motorcycle/", "000.JPG");
 //        testRegularFP("src/main/resources/image/horse/", "000.JPG");
-//        testMaxMin("src/main/resources/image/Motorcycle/", "000.JPG");
-        testMaxMin("src/main/resources/image/horse/", "000.JPG");
+        testMaxMin("src/main/resources/image/Motorcycle/", "000.JPG");
+//        testMaxMin("src/main/resources/image/tmp2/", "000.png");
+//        testMaxMin("src/main/resources/image/horse/", "000.JPG");
 //        scaleDownImage("src/main/resources/image/horse/000.JPG");
     }
 
@@ -71,7 +72,7 @@ public class RegularFPTest {
                 Mat display = new Mat();
 //                    Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), m, display);
                 Features2d.drawMatches(qImg, rQIF.getObjectKeypoints(), tImg, rTIF.getObjectKeypoints(), m, display);
-//                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
 
                 System.out.print("| ");
                 for (int i = 0; i < mL.size(); i++) {
@@ -158,6 +159,7 @@ public class RegularFPTest {
         List<Mat> testImages = new ArrayList<>();
         for (int i=5; i <= 35; i+=5) {
             String fileName = filePath + String.format("%03d.JPG", i);
+//            String fileName = filePath + String.format("%03d.png", i);
             testImages.add(ImageUtil.BufferedImage2Mat(ImageIO.read(new File(fileName))));
         }
         List<List<Integer>> fpTrack = analyzeFPsInImages(tIF, testImages);
@@ -165,7 +167,7 @@ public class RegularFPTest {
         int num = 100;
         for (int i : sizes) {
            if (i < num)
-               num = i;
+               num = i/10*10;
         }
         Pair<Integer, List<Integer>> candidates = minMax(fpTrack, num);
         System.out.printf("original template num: %d, min: %d, %d candidates:%s\n",tIF.getSize(), candidates.getKey(), candidates.getValue().size(), candidates.getValue());
@@ -192,13 +194,13 @@ public class RegularFPTest {
                 Mat qImg = ImageUtil.BufferedImage2Mat(ImageIO.read(f));
                 ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 500);
                 List<DMatch> matches = matchImage(qIF, imageFeature);
-//                MatOfDMatch m = new MatOfDMatch();
-//                m.fromList(matches);
-////            System.out.printf("%f\n", (float) matches.size() / imageFeature.getSize());
+                MatOfDMatch m = new MatOfDMatch();
+                m.fromList(matches);
+//            System.out.printf("%f\n", (float) matches.size() / imageFeature.getSize());
                 System.out.printf("%s: %f\n", f.getName(), (float) matches.size() / imageFeature.getSize());
-//                Mat display = new Mat();
-//                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, imageFeature.getObjectKeypoints(), m, display);
-//                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+                Mat display = new Mat();
+                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, imageFeature.getObjectKeypoints(), m, display);
+                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
             }
         }
     }
@@ -285,43 +287,12 @@ public class RegularFPTest {
     }
 
     static List<DMatch> matchImage(ImageFeature qIF, ImageFeature tIF) {
-        MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
-//                MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
-//                MatOfDMatch m = ImageProcessor.matchImages(qIF, tIF);
-//                MatOfDMatch m = ImageProcessor.matchWithRegression(qIF, tIF);
-        List<DMatch> mL = new ArrayList<>();
-//                List<DMatch> mL = m.toList();
-        Map<Integer, List<DMatch>> recorder = new HashMap<>();
-
-        for (DMatch match : m.toList()) {
-            //filter out those unqualified matches
-            if (match.distance < 300) {
-                if (recorder.get(match.trainIdx) == null) {
-                    recorder.put(match.trainIdx, new ArrayList<>());
-                }
-                recorder.get(match.trainIdx).add(match);
-//                        mL.add(match);
-            }
-        }
-        //if multiple query points are matched to the same template point, keep the match with minimum distance
-        for (Integer i : recorder.keySet()) {
-            DMatch minDisMatch = null;
-            float minDis = Float.MAX_VALUE;
-            for (DMatch dMatch : recorder.get(i)) {
-                if (dMatch.distance < minDis) {
-                    minDisMatch = dMatch;
-                    minDis = dMatch.distance;
-                }
-            }
-            if (minDisMatch != null)
-                mL.add(minDisMatch);
-        }
-
+        List<DMatch> mL = ImageProcessor.matchWithDistanceThreshold(qIF, tIF, 300).toList();
         //display matches
         mL.sort((o1, o2) -> {
             return (int) (o1.trainIdx - o2.trainIdx);
         });
-        return mL;
+        return  mL;
     }
 
 }

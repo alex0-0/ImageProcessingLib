@@ -25,7 +25,9 @@ public class Main {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 //        testOpenCV();
 //        testTensorFlow();
-//        testRobustFeature();
+//        testRobustFeature("src/main/resources/image/Motorcycle/", "000.JPG");
+//        testRobustFeature("src/main/resources/image/tmp2/", "000.png");
+        testRobustFeature("src/main/resources/image/horse/", "000.JPG");
 //        testTFRobustFeature();
 //        testDistortion();
     }
@@ -182,57 +184,38 @@ public class Main {
 //        System.out.printf("Robust-Regular match number: %d, Precision: %f\n", mymatches3.total(), (float)mymatches3.total()/ tIF.getSize());
     }
 
-    private static void testRobustFeature() throws IOException {
-        String image_1 = "src/main/resources/image/Vegeta_10.png";
-        String image_2 = "src/main/resources/image/Vegeta_00.png";
-        Mat img = ImageUtil.loadMatImage(image_1);
-        Mat testImg = ImageUtil.loadMatImage(image_2);
-//        testImg = ImageUtil.scaleImage(testImg, 0.8f);
-//        testImg = ImageUtil.scaleImage(testImg, 1.0f);
-        ImageFeature templateF = ImageProcessor.extractRobustFeatures(img, 100, DescriptorType.ORB);
-//        ImageFeature templateF = ImageProcessor.extractORBFeatures(img, 100);
-        ImageFeature testF = ImageProcessor.extractORBFeatures(testImg);
-        System.out.printf("Comparing %d vs %d FPs ", templateF.getSize(), testF.getSize());
-        MatOfDMatch matches = ImageProcessor.matchImages(testF, templateF);
-//        MatOfDMatch matches = ImageProcessor.matchImages(templateF, testF);
-
-
-//        SimpleRegression rx=new SimpleRegression();
-//        SimpleRegression ry=new SimpleRegression();
-//
-//        DMatch[] dMatches=matches.toArray();
-//        for(int i=0;i<dMatches.length;i++){
-//            DMatch tmpd=dMatches[i];
-//            KeyPoint kp1=ImageProcessor.findKeyPoint(templateF, tmpd.queryIdx);
-//            KeyPoint kp2=ImageProcessor.findKeyPoint(testF, tmpd.trainIdx);
-//
-//            System.out.printf("x:%.02f, y:%.02f \t x:%.02f, y:%.02f \t dist:%.02f\n",kp1.pt.x, kp1.pt.y, kp2.pt.x, kp2.pt.y, tmpd.distance);
-//            rx.addData(kp1.pt.x, kp2.pt.x);
-//            ry.addData(kp1.pt.y, kp2.pt.y);
-//        }
-//        System.out.println();
-//
-//        MatOfDMatch mymatches = ImageProcessor.myMatchImages(templateF, testF, rx, ry);
-        MatOfDMatch mymatches = ImageProcessor.matchWithRegression(testF, templateF);
-
-
-
-//        Features2d.drawKeypoints(img, templateF.getObjectKeypoints(), img, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);
-//        Features2d.drawKeypoints(testImg, testF.getObjectKeypoints(), testImg, Scalar.all(-1), Features2d.DRAW_RICH_KEYPOINTS);
-        System.out.printf("Match number: %d, Precision: %f\n", matches.total(), (float)matches.total()/ templateF.getSize());
-        //display matches
-        Mat display = new Mat();
-        Features2d.drawMatches(testImg, testF.getObjectKeypoints(), img, templateF.getObjectKeypoints(), matches, display);
-        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
-//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(img));
-//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(testImg));
-
-
-        System.out.printf("Match number: %d, Precision: %f\n", mymatches.total(), (float)mymatches.total()/ templateF.getSize());
-        //display matches
-        Mat display1 = new Mat();
-        Features2d.drawMatches(testImg, testF.getObjectKeypoints(),img, templateF.getObjectKeypoints(),  mymatches, display1);
-        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display1));
+    private static void testRobustFeature(String filePath, String templateImg) throws IOException {
+        Mat tImg = ImageUtil.loadMatImage(filePath+templateImg);
+//        List<Mat> distortedImg = ImageProcessor.rotatedImage(img, 5f, 5);
+//        List<Mat> distortedImg = ImageProcessor.scaleImage(img, -0.1f, 5);
+//        List<Mat> distortedImg = ImageProcessor.lightImage(img, -0.1f, 5);
+//        List<Mat> distortedImg = ImageProcessor.changeToLeftPerspective(tImg, 10f, 5);
+        List<Mat> distortedImg = ImageProcessor.changeToRightPerspective(tImg, 10f, 5);
+//        List<Mat> distortedImg = ImageProcessor.changeToBottomPerspective(img, 10f, 5);
+//        List<Mat> distortedImg = ImageProcessor.changeToTopPerspective(img, 10f, 5);
+        for (Mat i : distortedImg) {
+            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(i));
+        }
+        ImageFeature tIF = ImageProcessor.extractRobustFeatures(tImg, distortedImg, 300, DescriptorType.ORB);
+        System.out.printf("number of template robust FP: %d\n", tIF.getSize());
+        File dir = new File(filePath);
+        File[] directoryListing = dir.listFiles();
+        if (directoryListing != null) {
+            List<File> files = new ArrayList<>(Arrays.asList(directoryListing));
+            files.sort(Comparator.comparing(File::getName));
+            for (File f : files) {
+                if (f.getName().equals(templateImg))
+                    continue;
+                Mat qImg = ImageUtil.loadMatImage(f.getAbsolutePath());
+                ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 500);
+                MatOfDMatch matches = ImageProcessor.matchWithDistanceThreshold(qIF, tIF, 300);
+                System.out.printf("%s: %f\n", f.getName(), (float)matches.total() / tIF.getSize());
+                //display matches
+                Mat display = new Mat();
+                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
+                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+            }
+        }
     }
 
 

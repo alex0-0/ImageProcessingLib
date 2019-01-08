@@ -10,7 +10,9 @@ import org.opencv.core.*;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ImageProcessor {
 
@@ -260,6 +262,48 @@ public class ImageProcessor {
 
     static public MatOfDMatch matchWithRegression(ImageFeature qIF, ImageFeature tIF) {
         return matchWithRegression(qIF, tIF, 5, 500, 20);
+    }
+
+    static MatOfDMatch matchWithDistanceThreshold(ImageFeature qIF, ImageFeature tIF, int disThd) {
+        MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
+//                MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
+//                MatOfDMatch m = ImageProcessor.matchImages(qIF, tIF);
+//                MatOfDMatch m = ImageProcessor.matchWithRegression(qIF, tIF);
+        List<DMatch> mL = new ArrayList<>();
+//                List<DMatch> mL = m.toList();
+        Map<Integer, List<DMatch>> recorder = new HashMap<>();
+
+        for (DMatch match : m.toList()) {
+            //filter out those unqualified matches
+            if (match.distance < disThd) {
+                if (recorder.get(match.trainIdx) == null) {
+                    recorder.put(match.trainIdx, new ArrayList<>());
+                }
+                recorder.get(match.trainIdx).add(match);
+//                        mL.add(match);
+            }
+        }
+        //if multiple query points are matched to the same template point, keep the match with minimum distance
+        for (Integer i : recorder.keySet()) {
+            DMatch minDisMatch = null;
+            float minDis = Float.MAX_VALUE;
+            for (DMatch dMatch : recorder.get(i)) {
+                if (dMatch.distance < minDis) {
+                    minDisMatch = dMatch;
+                    minDis = dMatch.distance;
+                }
+            }
+            if (minDisMatch != null)
+                mL.add(minDisMatch);
+        }
+
+//        //display matches
+//        mL.sort((o1, o2) -> {
+//            return (int) (o1.trainIdx - o2.trainIdx);
+//        });
+        MatOfDMatch ret = new MatOfDMatch();
+        ret.fromList(mL);
+        return ret;
     }
 }
 
