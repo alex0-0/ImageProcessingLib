@@ -1,5 +1,6 @@
 package edu.umb.cs.imageprocessinglib.feature;
 
+import com.sun.istack.internal.Nullable;
 import edu.umb.cs.imageprocessinglib.model.DescriptorType;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import javafx.util.Pair;
@@ -28,7 +29,7 @@ import java.util.stream.IntStream;
 public class FeatureDetector {
     private static final int        kMaxFeatures = 500;
 
-    private FastFeatureDetector     FAST;
+//    private FastFeatureDetector     FAST;
     private SURF surf;
     private ORB orb;
 
@@ -45,7 +46,7 @@ public class FeatureDetector {
     }
 
     private FeatureDetector() {
-        FAST = FastFeatureDetector.create();
+//        FAST = FastFeatureDetector.create();
         surf = SURF.create();
         surf.setHessianThreshold(400);
         orb = ORB.create(kMaxFeatures, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
@@ -130,11 +131,21 @@ public class FeatureDetector {
      * @param keyPoints
      * @param descriptors
      * @param type              the descriptor type
-     * @param filterThreshold   remove feature points which has count lower than threshold
      * @param num               the number limit for returning key points
+     * @param disThd            distance threshold using for filtering unqualified matches
+     * @param minTracker        record how every returned key point influence the minimum matching ratio of distorted images
      * @return boolean indicates whether the method is done without problem
      */
-    public boolean sortedRobustFeatures(Mat img, List<Mat> distortedImages, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int filterThreshold, int num) {
+    public boolean extractRobustFeatures(
+            Mat img,
+            List<Mat> distortedImages,
+            MatOfKeyPoint keyPoints,
+            Mat descriptors,
+            DescriptorType type,
+            int num,
+            int disThd,
+            @Nullable List<Integer> minTracker)
+    {
 //        ArrayList<MatOfKeyPoint> listOfKeyPoints = new ArrayList<>();
 //        ArrayList<Mat> listOfDescriptors = new ArrayList<>();
 //        MatOfKeyPoint kp = new MatOfKeyPoint();
@@ -144,14 +155,13 @@ public class FeatureDetector {
 //        List<HashSet<Integer>> tracker = trackFeatures(img, distortedImages, kp, des, listOfKeyPoints, listOfDescriptors, listOfMatches, type);
 
         MatOfKeyPoint kp = new MatOfKeyPoint();
-        List<List<Integer>> fpTrack = analyzeFPsInImages(img, distortedImages, kp, type);
+        List<List<Integer>> fpTrack = analyzeFPsInImages(img, distortedImages, kp, type, disThd);
         List<Integer> sizes = fpTrack.stream().map(o->o.size()).collect(Collectors.toList());
-//        int num = 100;
         for (int i : sizes) {
             if (i < num)
                 num = i/10*10;
         }
-        List<Integer> candidates = minMax(fpTrack, num);
+        List<Integer> candidates = maxMin(fpTrack, num, minTracker);
         List<KeyPoint> tKP = kp.toList();
         List<KeyPoint> kpList = new ArrayList<>();
         for (int i : candidates) {
@@ -232,7 +242,7 @@ print out matching results
     }
 
     //return a list of lists containing the index of matched feature points
-    public List<List<Integer>> analyzeFPsInImages(Mat tImg, List<Mat> images, MatOfKeyPoint tKPs, DescriptorType type) {
+    public List<List<Integer>> analyzeFPsInImages(Mat tImg, List<Mat> images, MatOfKeyPoint tKPs, DescriptorType type, int disThd) {
 
         List<List<Integer>> ret = new ArrayList<>();
 
@@ -250,7 +260,7 @@ print out matching results
             Map<Integer, List<DMatch>> recorder = new HashMap<>();
             for (DMatch match : m.toList()) {
                 //filter out those unqualified matches
-                if (match.distance < 300) {
+                if (match.distance < disThd) {
                     if (recorder.get(match.trainIdx) == null) {
                         recorder.put(match.trainIdx, new ArrayList<>());
                     }
@@ -280,10 +290,11 @@ print out matching results
      * which can maximize the minimum counter value.
      * @param input for each target, this argument uses a list containing all qualified candidates
      * @param num   number of returned candidates
+     * @param minTracker   track the Min value when keep the corresponding candidate in returned list, can be null
      * @return an integer indicating the minimum counter value and a list containing most promising candidates
      */
 //    static Pair<Integer, List<Integer>> minMax(List<List<Integer>> input, int num) {
-    static List<Integer> minMax(List<List<Integer>> input, int num) {
+    List<Integer> maxMin(List<List<Integer>> input, int num, @Nullable List<Integer> minTracker) {
         List<Integer> ret = new ArrayList<>();
         List<Integer> counters = new ArrayList<>();
         Map<Integer, Set<Integer>> tracker = new HashMap<>();   //using set rather than list just in case the input is not properly preprocessed
@@ -334,8 +345,11 @@ print out matching results
             //all mins get a new matched candidate
             if (max >= mins.size())
                 min++;
-            if (maxKey != -1)
+            if (maxKey != -1) {
                 ret.add(maxKey);
+                if (minTracker != null)
+                    minTracker.add(min);
+            }
             for (int i : tracker.get(maxKey))
                 counters.set(i, counters.get(i)+1);
             tracker.remove(maxKey);
@@ -343,22 +357,6 @@ print out matching results
 
 //        return new Pair<Integer, List<Integer>>(min, ret);
         return ret;
-    }
-
-
-
-    private static int kRobustThreshold =   3;      //threshold deciding whether a feature point is robust to distortion
-
-    public boolean extractRobustFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int num) {
-        return sortedRobustFeatures(img, distortImage(img), keyPoints, descriptors, type, kRobustThreshold, num);
-    }
-
-    public boolean extractRobustFeatures(Mat img, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type) {
-        return sortedRobustFeatures(img, distortImage(img), keyPoints, descriptors, type, kRobustThreshold, kMaxFeatures);
-    }
-
-    public boolean extractRobustFeatures(Mat img, List<Mat> distortedImg, MatOfKeyPoint keyPoints, Mat descriptors, DescriptorType type, int num) {
-        return sortedRobustFeatures(img, distortedImg, keyPoints, descriptors, type, kRobustThreshold, num);
     }
 
 

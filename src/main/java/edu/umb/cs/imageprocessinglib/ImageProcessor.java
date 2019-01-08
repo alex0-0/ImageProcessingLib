@@ -139,18 +139,20 @@ public class ImageProcessor {
         Mat des = new Mat();
 //        FeatureDetector featureDetector = new FeatureDetector(num);
 //        featureDetector.extractRobustFeatures(img, kps, des, type, num);
-        FeatureDetector.getInstance().extractRobustFeatures(img, kps, des, type, num);
+        FeatureDetector.getInstance().extractRobustFeatures(img, FeatureDetector.getInstance().distortImage(img), kps, des, type, num, 300, null);
         return new ImageFeature(kps, des, type);
     }
 
-    /*
-    Extract image feature points
-     */
-    static public ImageFeature extractRobustFeatures(Mat img, List<Mat> distortedImg, int num, DescriptorType type) {
+    static public ImageFeature extractRobustFeatures(Mat img, List<Mat> distortedImg, int num, int disThd, DescriptorType type) {
+       return extractRobustFeatures(img, distortedImg, num, disThd, type, null);
+    }
+
+    //Extract robust image feature points with customized setting
+    static public ImageFeature extractRobustFeatures(Mat img, List<Mat> distortedImg, int num, int disThd, DescriptorType type, List<Integer> minTracker) {
         MatOfKeyPoint kps = new MatOfKeyPoint();
         Mat des = new Mat();
 //        FeatureDetector fd = new FeatureDetector(num);
-        FeatureDetector.getInstance().extractRobustFeatures(img, distortedImg, kps, des, type, num);
+        FeatureDetector.getInstance().extractRobustFeatures(img, distortedImg, kps, des, type, num, disThd, minTracker);
         return new ImageFeature(kps, des, type);
     }
 
@@ -158,10 +160,7 @@ public class ImageProcessor {
     Extract image feature points
      */
     static public ImageFeature extractRobustFeatures(Mat img) {
-        MatOfKeyPoint kps = new MatOfKeyPoint();
-        Mat des = new Mat();
-        FeatureDetector.getInstance().extractRobustFeatures(img, kps, des, DescriptorType.ORB);
-        return new ImageFeature(kps, des);
+        return extractRobustFeatures(img, 500, DescriptorType.ORB);
     }
 
     /*
@@ -261,7 +260,7 @@ public class ImageProcessor {
     }
 
     static public MatOfDMatch matchWithRegression(ImageFeature qIF, ImageFeature tIF) {
-        return matchWithRegression(qIF, tIF, 5, 500, 20);
+        return matchWithRegression(qIF, tIF, 5, 300, 20);
     }
 
     static MatOfDMatch matchWithDistanceThreshold(ImageFeature qIF, ImageFeature tIF, int disThd) {

@@ -169,7 +169,7 @@ public class RegularFPTest {
            if (i < num)
                num = i/10*10;
         }
-        Pair<Integer, List<Integer>> candidates = minMax(fpTrack, num);
+        Pair<Integer, List<Integer>> candidates = maxMin(fpTrack, num);
         System.out.printf("original template num: %d, min: %d, %d candidates:%s\n",tIF.getSize(), candidates.getKey(), candidates.getValue().size(), candidates.getValue());
 
         List<KeyPoint> tKP = tIF.getObjectKeypoints().toList();
@@ -212,7 +212,7 @@ public class RegularFPTest {
      * @param num   number of returned candidates
      * @return an integer indicating the minimum counter value and a list containing most promising candidates
      */
-    static Pair<Integer, List<Integer>> minMax(List<List<Integer>> input, int num) {
+    static Pair<Integer, List<Integer>> maxMin(List<List<Integer>> input, int num) {
         List<Integer> ret = new ArrayList<>();
         List<Integer> counters = new ArrayList<>();
         Map<Integer, Set<Integer>> tracker = new HashMap<>();   //using set rather than list just in case the input is not properly preprocessed

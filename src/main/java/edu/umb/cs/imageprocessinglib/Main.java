@@ -16,6 +16,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.opencv.core.CvType.CV_32F;
 
@@ -25,9 +27,9 @@ public class Main {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 //        testOpenCV();
 //        testTensorFlow();
-//        testRobustFeature("src/main/resources/image/Motorcycle/", "000.JPG");
+        testRobustFeature("src/main/resources/image/Motorcycle/", "000.JPG");
 //        testRobustFeature("src/main/resources/image/tmp2/", "000.png");
-        testRobustFeature("src/main/resources/image/horse/", "000.JPG");
+//        testRobustFeature("src/main/resources/image/horse/", "000.JPG");
 //        testTFRobustFeature();
 //        testDistortion();
     }
@@ -77,7 +79,7 @@ public class Main {
 
         //test robust feature
 //        ImageFeature tIF = ImageProcessor.extractRobustFeatures(img, distortedImg, 100, DescriptorType.SURF);
-        ImageFeature tIF = ImageProcessor.extractRobustFeatures(img, distortedImg, 100, DescriptorType.ORB);
+        ImageFeature tIF = ImageProcessor.extractRobustFeatures(img, distortedImg, 100, 200, DescriptorType.ORB);
 //        String image_2 = "src/main/resources/image/test.jpg";
         String image_2 = "src/main/resources/image/Vegeta_00.png";
         Mat testImg = ImageUtil.loadMatImage(image_2);
@@ -189,15 +191,23 @@ public class Main {
 //        List<Mat> distortedImg = ImageProcessor.rotatedImage(img, 5f, 5);
 //        List<Mat> distortedImg = ImageProcessor.scaleImage(img, -0.1f, 5);
 //        List<Mat> distortedImg = ImageProcessor.lightImage(img, -0.1f, 5);
-//        List<Mat> distortedImg = ImageProcessor.changeToLeftPerspective(tImg, 10f, 5);
-        List<Mat> distortedImg = ImageProcessor.changeToRightPerspective(tImg, 10f, 5);
+        List<Mat> distortedImg = ImageProcessor.changeToLeftPerspective(tImg, 10f, 7);
+//        List<Mat> distortedImg = ImageProcessor.changeToRightPerspective(tImg, 10f, 5);
 //        List<Mat> distortedImg = ImageProcessor.changeToBottomPerspective(img, 10f, 5);
 //        List<Mat> distortedImg = ImageProcessor.changeToTopPerspective(img, 10f, 5);
         for (Mat i : distortedImg) {
             ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(i));
         }
-        ImageFeature tIF = ImageProcessor.extractRobustFeatures(tImg, distortedImg, 300, DescriptorType.ORB);
+        List<Integer> minTracker = new ArrayList<>();
+        ImageFeature tIF = ImageProcessor.extractRobustFeatures(tImg, distortedImg, 100, 300, DescriptorType.ORB, minTracker);
         System.out.printf("number of template robust FP: %d\n", tIF.getSize());
+        //calculate min precision
+        List<Float> minPrecisionTracker = IntStream.range(0, minTracker.size()).mapToObj(i->{
+            return (float)minTracker.get(i)/(i+1);
+        }).collect(Collectors.toList());
+        System.out.printf("min num:\t%s\nmin precision:\t%s\n", minTracker, minPrecisionTracker);
+
+        //test on real images
         File dir = new File(filePath);
         File[] directoryListing = dir.listFiles();
         if (directoryListing != null) {
@@ -208,7 +218,7 @@ public class Main {
                     continue;
                 Mat qImg = ImageUtil.loadMatImage(f.getAbsolutePath());
                 ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 500);
-                MatOfDMatch matches = ImageProcessor.matchWithDistanceThreshold(qIF, tIF, 300);
+                MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, 300, 20);
                 System.out.printf("%s: %f\n", f.getName(), (float)matches.total() / tIF.getSize());
                 //display matches
                 Mat display = new Mat();
