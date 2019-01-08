@@ -1,6 +1,5 @@
 package edu.umb.cs.imageprocessinglib.feature;
 
-import com.sun.istack.internal.Nullable;
 import edu.umb.cs.imageprocessinglib.model.DescriptorType;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import javafx.util.Pair;
@@ -144,7 +143,7 @@ public class FeatureDetector {
             DescriptorType type,
             int num,
             int disThd,
-            @Nullable List<Integer> minTracker)
+            List<Integer> minTracker)
     {
 //        ArrayList<MatOfKeyPoint> listOfKeyPoints = new ArrayList<>();
 //        ArrayList<Mat> listOfDescriptors = new ArrayList<>();
@@ -294,7 +293,7 @@ print out matching results
      * @return an integer indicating the minimum counter value and a list containing most promising candidates
      */
 //    static Pair<Integer, List<Integer>> minMax(List<List<Integer>> input, int num) {
-    List<Integer> maxMin(List<List<Integer>> input, int num, @Nullable List<Integer> minTracker) {
+    List<Integer> maxMin(List<List<Integer>> input, int num, List<Integer> minTracker) {
         List<Integer> ret = new ArrayList<>();
         List<Integer> counters = new ArrayList<>();
         Map<Integer, Set<Integer>> tracker = new HashMap<>();   //using set rather than list just in case the input is not properly preprocessed
