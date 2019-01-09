@@ -187,6 +187,8 @@ public class FeatureMatcher {
         KeyPoint[] queryKPs = queryKeyPoints.toArray();
 
         DMatch[] dMatches = symMatches.toArray();
+
+        System.out.printf("dmatch size:%d\n",dMatches.length);
         //record which template key point is matched already
         List<Boolean> tepTag = new ArrayList<>(matches1.size());
         //record which query key point is matched already
@@ -224,8 +226,9 @@ public class FeatureMatcher {
             double diffy = Math.abs(ey-kp1.pt.y);
             positionThd += Math.max(diffx, diffy);
         }
-        posThd = (int)(positionThd/dMatches.length*1.5f);
+        posThd = (int)Math.min(20,(int)(positionThd/dMatches.length*1.5f));
 
+        //System.out.printf("posThd:%d\n",posThd);
         List<List<DMatch>> candidates = new ArrayList<>();
 
         for (int i = 0; i < matches1.size(); i++) {
@@ -237,11 +240,16 @@ public class FeatureMatcher {
 //            int index = -1;
 //            double min = posThd;
             List<DMatch> matches = new ArrayList<>();
+            int ec=0;
+            //System.out.printf("ms.length:%d\n",ms.length);
             for(int j=0;j<ms.length;j++){
                 //if the query point is already matched, skip
                 if (qryTag.get(ms[j].trainIdx))
                     continue;
-                if(ms[j].distance > matchDisThd) continue;
+                if(ms[j].distance > matchDisThd){
+                    ec++;
+                    continue;
+                }
                 KeyPoint qkp = queryKPs[ms[j].trainIdx];
                 KeyPoint tkp = templateKPs[ms[j].queryIdx];
 //                KeyPoint qkp = queryKPs[ms[j].trainIdx];
@@ -263,6 +271,8 @@ public class FeatureMatcher {
 //            if (index != -1)
 //                //To be consistent with the method parameters name, we exchange the DMatch parameter here.
 //                retList.add(new DMatch(ms[index].trainIdx, ms[index].queryIdx, ms[index].distance));
+            //System.out.printf("%d matches are removed due to a large distance value.\n",ec);
+            //System.out.printf("matches1:%d, matches:%d\n",matches1.size(),matches.size());
         }
 
         Map<Integer, DMatch> tracker = new HashMap<>();
