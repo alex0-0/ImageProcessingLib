@@ -33,12 +33,22 @@ public class Main {
 //        testRobustFeature("src/main/resources/image/horse2/", "-05.JPG");
 //        testRobustFeature("src/main/resources/image/girl_statue/", "5.png");
 //        testRobustFeature("src/main/resources/image/van_gogh/", "5.png");
-        testRobustFeature("src/main/resources/image/toy_bear/", "0.png");
+//        testRobustFeature("src/main/resources/image/toy_bear/", "0.png");
 //        testTFRobustFeature();
 //        testDistortion();
 
-        testRobustFeature("src/main/resources/image/toy_bear/", 0, null, DistortionType.LeftPers,
-                5, 10, 100, 300, 500, 300, 20, 8);
+        String[] dirNames = {"lego_man", "shoe", "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup"};
+        for (String dir : dirNames) {
+            for (int i=0; i <= 60; i+=10) {
+                testRobustFeature("src/main/resources/image/"+dir+"/", i, dir+"_left_robust_fp_test", DistortionType.LeftPers,
+                        5, 10, 100, 300, 500, 500, 20, 8);
+                int k = 350-i;
+                testRobustFeature("src/main/resources/image/"+dir+"/", k, dir+"_right_robust_fp_test", DistortionType.RightPers,
+                        5, 10, 100, 300, 500, 500, 20, 8);
+            }
+        }
+//        testRobustFeature("src/main/resources/image/van_gogh/", 0, null, DistortionType.LeftPers,
+//                5, 10, 100, 300, 500, 500, 20, 8);
 //        testRobustFeature("src/main/resources/image/furry_bear/", 50, null, DistortionType.RightPers,
 //                5, 10, 100, 300, 500, 300, 20, 8);
     }
@@ -238,7 +248,8 @@ public class Main {
         String hyperParams = "*********hyperparameters**********\n" +
                 "ratioTest: knnRatioThreshold 0.7; " +
                 "ransac: reproj_thd 15, max_itd 2000, conf 0.995; " +
-                "matchWithRegression: posThd min(posThd,avg_pos_dif*1.5f)), ransac_condition symMatches.length>20";
+                "matchWithRegression: posThd min(posThd,avg_pos_dif*1.5f)), ransac_condition symMatches.length>20, intern-quartile 25%~75%, " +
+                "intern-quartile init min dis thd 5, init diff ratio 2";
         String tFName = filePath + templateValue + ".png";
         Mat tImg = ImageUtil.loadMatImage(tFName);
         List<Mat> distortedImg = null;
@@ -286,22 +297,26 @@ public class Main {
             + "_qfpn" + qFPNum + "_mdt" + matchDisThd + "_mpt" + matchPosThd + "_tn" + testNum;
         }
         File logFile = new File(logName);
+        boolean append = logFile.exists();
         logFile.createNewFile();
         PrintWriter pw = new PrintWriter(new FileOutputStream(logFile, true));
-        pw.println(hyperParams);
+        List<String> fNames = new ArrayList<>();
+        List<Float> pres = new ArrayList<>();
 
         ImageFeature tIF = ImageProcessor.extractRobustFeatures(tImg, distortedImg, tFPNum, robustDisThd, DescriptorType.ORB, null);
 
-        System.out.printf("*****%s*******\n", dir.getName());
-        pw.printf("*****%s*******\n", dir.getName());
+        System.out.printf("-----%s-------\n", dir.getName());
         for (int k=1; k <= testNum; k++) {
             int i = templateValue + (int)testStep * k;
             Mat qImg = ImageUtil.loadMatImage(filePath+i+".png");
             //assume we use ORB feature points in default
             ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
             MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
-            System.out.printf("%d: %f\n", i, (float)matches.total() / tIF.getSize());
-            pw.printf("%d: %f\n", i, (float)matches.total() / tIF.getSize());
+            float p = (float)matches.total() / tIF.getSize();
+            System.out.printf("%d: %f\n", i, p);
+//            pw.printf("%d: %f\n", i, (float)matches.total() / tIF.getSize());
+            fNames.add(""+(int)testStep*k);
+            pres.add(p);
             //display matches
 //            Mat display = new Mat();
 //            Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
@@ -316,9 +331,31 @@ public class Main {
             //assume we use ORB feature points in default
             ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
             MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
-            System.out.printf("f%d: %f\n", i, (float)matches.total() / tIF.getSize());
-            pw.printf("f%d: %f\n", i, (float)matches.total() / tIF.getSize());
+            float p = (float)matches.total() / tIF.getSize();
+            System.out.printf("f%d: %f\n", i, p);
+//            pw.printf("f%d: %f\n", i, (float)matches.total() / tIF.getSize());
+            fNames.add("f"+i);
+            pres.add(p);
+            //display matches
+//            Mat display = new Mat();
+//            Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
+//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
         }
+        if (!append) {
+            pw.println(hyperParams);
+            pw.printf("dType: %s dStep: %f, dNum: %d, tFPNum: %d, robustDisThd: %d, qFPNum: %d, matchDisThd: %d, matchPosThd: %d\n",
+                    distortionStr, dStep, dNum, tFPNum, robustDisThd, qFPNum, matchDisThd, matchPosThd);
+
+            pw.printf("-----%s-------\n", dir.getName());
+            pw.print("init/change\t");
+            for (String f : fNames)
+                pw.print(f + "\t");
+            pw.println();   //next line
+        }
+        pw.print(templateValue + "\t");
+        for (float p : pres)
+            pw.printf("%.2f\t",p);
+        pw.println();   //next line
         pw.close();
     }
 
@@ -354,7 +391,7 @@ public class Main {
                     continue;
                 Mat qImg = ImageUtil.loadMatImage(f.getAbsolutePath());
                 ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 500);
-                MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, 300, 20);
+                MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, 500, 20);
                 System.out.printf("%s: %f\n", f.getName(), (float)matches.total() / tIF.getSize());
                 //display matches
 //                Mat display = new Mat();

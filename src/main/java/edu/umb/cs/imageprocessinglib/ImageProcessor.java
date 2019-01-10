@@ -214,16 +214,6 @@ public class ImageProcessor {
 //        return FeatureMatcher.getInstance().BFMatchFeature(qIF.getDescriptors(), tIF.getDescriptors());
     }
 
-    static public MatOfDMatch myMatchImages(ImageFeature qIF, ImageFeature tIF, SimpleRegression rx, SimpleRegression ry) {
-        if (qIF.getDescriptorType() != tIF.getDescriptorType()) {
-            System.out.print("Can't match different feature descriptor types");
-            return null;
-        }
-        return FeatureMatcher.getInstance().myMatchFeature(qIF.getDescriptors(), tIF.getDescriptors(),
-                qIF.getObjectKeypoints(), tIF.getObjectKeypoints(), qIF.getDescriptorType(), rx, ry);
-//        return FeatureMatcher.getInstance().BFMatchFeature(qIF.getDescriptors(), tIF.getDescriptors());
-    }
-
     static public MatOfDMatch matchImages(Mat queryImg, Mat temImg) {
         ImageFeature qIF = extractFeatures(queryImg);
         ImageFeature tIF = extractFeatures(temImg);
