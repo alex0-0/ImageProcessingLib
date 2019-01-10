@@ -188,7 +188,7 @@ public class FeatureMatcher {
 
         DMatch[] dMatches = symMatches.toArray();
 
-//        System.out.printf("dmatch size:%d\n",dMatches.length);
+        System.out.printf("dmatch size:%d\n",dMatches.length);
         //record which template key point is matched already
         List<Boolean> tepTag = new ArrayList<>(matches1.size());
         //record which query key point is matched already
@@ -196,6 +196,68 @@ public class FeatureMatcher {
 
         for (int i=0; i < templateKPs.length; i++)
             tepTag.add(FALSE);
+
+        for(int i=0;i<dMatches.length;i++) {
+            DMatch tmpd = dMatches[i];
+            KeyPoint kp1 = queryKPs[tmpd.trainIdx];
+            KeyPoint kp2 = templateKPs[tmpd.queryIdx];
+
+            //mark the query key point is matched
+            qryTag.set(tmpd.trainIdx);
+
+            rx.addData(kp2.pt.x, kp1.pt.x);
+            ry.addData(kp2.pt.y, kp1.pt.y);
+        }
+
+        double[] diffx=new double[dMatches.length], diffy=new double[dMatches.length];
+        for(int i=0;i<dMatches.length;i++) {
+            DMatch tmpd = dMatches[i];
+            KeyPoint kp1 = queryKPs[tmpd.trainIdx];
+            KeyPoint kp2 = templateKPs[tmpd.queryIdx];
+
+            double ex = kp2.pt.x*rx.getSlope() + rx.getIntercept();
+            double ey = kp2.pt.y*ry.getSlope() + ry.getIntercept();
+            diffx[i] = Math.abs(ex-kp1.pt.x);
+            diffy[i] = Math.abs(ey-kp1.pt.y);
+        }
+
+        //calculate the avg of inter-quartile 25%~75%
+        Arrays.sort(diffx); Arrays.sort(diffy);
+        double diffx_avg=Arrays.stream(
+                Arrays.copyOfRange(diffx,(int)(0.25*diffx.length),(int)(0.75*diffx.length))).average().getAsDouble();
+        double diffy_avg=Arrays.stream(
+                Arrays.copyOfRange(diffy,(int)(0.25*diffy.length),(int)(0.75*diffy.length))).average().getAsDouble();
+        double diff_th=5;
+        if(diffx_avg<diff_th) diffx_avg=diff_th;
+        if(diffy_avg<diff_th) diffy_avg=diff_th;
+
+        System.out.println(Arrays.toString(diffx));
+        System.out.println(Arrays.toString(diffy));
+        System.out.printf("diffx_avg:%.02f\tdiffy_avg:%.02f\n",diffx_avg,diffy_avg);
+
+        double ratio=2;
+        for(int i=0;i<dMatches.length;i++) {
+            DMatch tmpd = dMatches[i];
+            KeyPoint kp1 = queryKPs[tmpd.trainIdx];
+            KeyPoint kp2 = templateKPs[tmpd.queryIdx];
+            double ex = kp2.pt.x*rx.getSlope() + rx.getIntercept();
+            double ey = kp2.pt.y*ry.getSlope() + ry.getIntercept();
+
+            double dx = Math.abs(ex-kp1.pt.x);
+            double dy = Math.abs(ey-kp1.pt.y);
+
+            if((dx>ratio*diffx_avg)||(dy>ratio*diffy_avg)) continue;
+
+            //mark the query key point is matched
+            qryTag.set(tmpd.trainIdx);
+            //mark template key point is matched
+            tepTag.set(tmpd.queryIdx, TRUE);
+            DMatch match = dMatches[i];
+            retList.add(new DMatch(match.trainIdx, match.queryIdx, match.distance));
+        }
+        System.out.printf("Initial retlist size:%d\n",retList.size());
+
+        /*
         for(int i=0;i<dMatches.length;i++) {
             DMatch tmpd = dMatches[i];
             KeyPoint kp1 = queryKPs[tmpd.trainIdx];
@@ -211,7 +273,7 @@ public class FeatureMatcher {
             tepTag.set(tmpd.queryIdx, TRUE);
             DMatch match = dMatches[i];
             retList.add(new DMatch(match.trainIdx, match.queryIdx, match.distance));
-        }
+        }*/
 
         //calculate position distance threshold
         int positionThd = 0;
@@ -222,9 +284,9 @@ public class FeatureMatcher {
             double ex = kp2.pt.x*rx.getSlope() + rx.getIntercept();
             double ey = kp2.pt.y*ry.getSlope() + ry.getIntercept();
 
-            double diffx = Math.abs(ex-kp1.pt.x);
-            double diffy = Math.abs(ey-kp1.pt.y);
-            positionThd += Math.max(diffx, diffy);
+            double dx = Math.abs(ex-kp1.pt.x);
+            double dy = Math.abs(ey-kp1.pt.y);
+            positionThd += Math.max(dx, dy);
         }
         posThd = (int)Math.min(posThd,(int)(positionThd/dMatches.length*1.5f));
 
@@ -257,10 +319,10 @@ public class FeatureMatcher {
                 double ex = tkp.pt.x*rx.getSlope() + rx.getIntercept();
                 double ey = tkp.pt.y*ry.getSlope() + ry.getIntercept();
 
-                double diffx = Math.abs(ex-qkp.pt.x);
-                double diffy = Math.abs(ey-qkp.pt.y);
+                double dx = Math.abs(ex-qkp.pt.x);
+                double dy = Math.abs(ey-qkp.pt.y);
 //                if( diffx < min && diffy < min){
-                if( diffx < posThd && diffy < posThd){
+                if( dx < posThd && dy < posThd){
 //                    min = Math.max(diffx, diffy);
 //                    index = j;
                     matches.add(ms[j]);
