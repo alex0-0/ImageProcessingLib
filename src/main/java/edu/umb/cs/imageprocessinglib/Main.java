@@ -33,14 +33,14 @@ public class Main {
 //        testRobustFeature("src/main/resources/image/horse2/", "-05.JPG");
 //        testRobustFeature("src/main/resources/image/girl_statue/", "5.png");
 //        testRobustFeature("src/main/resources/image/van_gogh/", "5.png");
-//        testRobustFeature("src/main/resources/image/baby_cream/", "0.png");
+        testRobustFeature("src/main/resources/image/toy_bear/", "0.png");
 //        testTFRobustFeature();
 //        testDistortion();
 
         testRobustFeature("src/main/resources/image/toy_bear/", 0, null, DistortionType.LeftPers,
                 5, 10, 100, 300, 500, 300, 20, 8);
-        testRobustFeature("src/main/resources/image/furry_bear/", 50, null, DistortionType.RightPers,
-                5, 10, 100, 300, 500, 300, 20, 8);
+//        testRobustFeature("src/main/resources/image/furry_bear/", 50, null, DistortionType.RightPers,
+//                5, 10, 100, 300, 500, 300, 20, 8);
     }
 
     private static void testDistortion() throws IOException {
@@ -290,17 +290,22 @@ public class Main {
         PrintWriter pw = new PrintWriter(new FileOutputStream(logFile, true));
         pw.println(hyperParams);
 
-        ImageFeature tIF = ImageProcessor.extractRobustFeatures(tImg, distortedImg, qFPNum, robustDisThd, DescriptorType.ORB, null);
+        ImageFeature tIF = ImageProcessor.extractRobustFeatures(tImg, distortedImg, tFPNum, robustDisThd, DescriptorType.ORB, null);
 
         System.out.printf("*****%s*******\n", dir.getName());
-        for (int k=0; k < testNum; k++) {
+        pw.printf("*****%s*******\n", dir.getName());
+        for (int k=1; k <= testNum; k++) {
             int i = templateValue + (int)testStep * k;
             Mat qImg = ImageUtil.loadMatImage(filePath+i+".png");
             //assume we use ORB feature points in default
-            ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, tFPNum);
+            ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
             MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
             System.out.printf("%d: %f\n", i, (float)matches.total() / tIF.getSize());
             pw.printf("%d: %f\n", i, (float)matches.total() / tIF.getSize());
+            //display matches
+//            Mat display = new Mat();
+//            Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
+//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
         }
 
         //assume all false image are named as "f"+number+".png"
@@ -309,7 +314,7 @@ public class Main {
             if (!fImg.exists()) break;
             Mat qImg = ImageUtil.loadMatImage(fImg.getAbsolutePath());
             //assume we use ORB feature points in default
-            ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, tFPNum);
+            ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
             MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
             System.out.printf("f%d: %f\n", i, (float)matches.total() / tIF.getSize());
             pw.printf("f%d: %f\n", i, (float)matches.total() / tIF.getSize());
@@ -322,8 +327,8 @@ public class Main {
 //        List<Mat> distortedImg = ImageProcessor.rotatedImage(img, 5f, 5);
 //        List<Mat> distortedImg = ImageProcessor.scaleImage(img, -0.1f, 5);
 //        List<Mat> distortedImg = ImageProcessor.lightImage(img, -0.1f, 5);
-//        List<Mat> distortedImg = ImageProcessor.changeToLeftPerspective(tImg, 5f, 10);
-        List<Mat> distortedImg = ImageProcessor.changeToRightPerspective(tImg, 5f, 10);
+        List<Mat> distortedImg = ImageProcessor.changeToLeftPerspective(tImg, 5f, 10);
+//        List<Mat> distortedImg = ImageProcessor.changeToRightPerspective(tImg, 5f, 10);
 //        List<Mat> distortedImg = ImageProcessor.changeToBottomPerspective(img, 10f, 5);
 //        List<Mat> distortedImg = ImageProcessor.changeToTopPerspective(img, 10f, 5);
         for (Mat i : distortedImg) {
@@ -349,12 +354,12 @@ public class Main {
                     continue;
                 Mat qImg = ImageUtil.loadMatImage(f.getAbsolutePath());
                 ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 500);
-                MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, 500, 20);
+                MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, 300, 20);
                 System.out.printf("%s: %f\n", f.getName(), (float)matches.total() / tIF.getSize());
                 //display matches
-                Mat display = new Mat();
-                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
-                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+//                Mat display = new Mat();
+//                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
+//                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
             }
         }
     }
