@@ -40,16 +40,16 @@ public class Main {
         String[] dirNames = {"lego_man", "shoe", "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup"};
         for (String dir : dirNames) {
             for (int i=0; i <= 60; i+=10) {
-                testRobustFeature("src/main/resources/image/"+dir+"/", i, dir+"_left_robust_fp_test", DistortionType.LeftPers,
+                testRobustFeature("src/main/resources/image/"+dir+"/", i, dir+"_left_robust_fp_test", false, DistortionType.LeftPers,
                         5, 10, 100, 300, 500, 500, 20, 8);
                 int k = 350-i;
-                testRobustFeature("src/main/resources/image/"+dir+"/", k, dir+"_right_robust_fp_test", DistortionType.RightPers,
+                testRobustFeature("src/main/resources/image/"+dir+"/", k, dir+"_right_robust_fp_test", false, DistortionType.RightPers,
                         5, 10, 100, 300, 500, 500, 20, 8);
             }
         }
-//        testRobustFeature("src/main/resources/image/van_gogh/", 0, null, DistortionType.LeftPers,
+//        testRobustFeature("src/main/resources/image/van_gogh/", 0, null, true,  DistortionType.LeftPers,
 //                5, 10, 100, 300, 500, 500, 20, 8);
-//        testRobustFeature("src/main/resources/image/furry_bear/", 50, null, DistortionType.RightPers,
+//        testRobustFeature("src/main/resources/image/furry_bear/", 50, null, true, DistortionType.RightPers,
 //                5, 10, 100, 300, 500, 300, 20, 8);
     }
 
@@ -220,6 +220,7 @@ public class Main {
      * @param filePath          the path of directory in where the images are
      * @param templateValue     the value used as template
      * @param logName           file used to log. If logName is not given, directory_name+parameters will be used
+     * @param rewriteHP           whether the method should write down hyperparameters again if the file already exist
      * @param dType             what kind of distortion is used to generate distorted images
      * @param dStep             step value for distortion
      * @param dNum              how many distorted images should be generated
@@ -235,6 +236,7 @@ public class Main {
     static void testRobustFeature(String filePath,
                                   int templateValue,
                                   String logName,
+                                  boolean rewriteHP,
                                   DistortionType dType,
                                   float dStep,
                                   int dNum,
@@ -341,7 +343,7 @@ public class Main {
 //            Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
 //            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
         }
-        if (!append) {
+        if (!append || rewriteHP) {
             pw.println(hyperParams);
             pw.printf("dType: %s dStep: %f, dNum: %d, tFPNum: %d, robustDisThd: %d, qFPNum: %d, matchDisThd: %d, matchPosThd: %d\n",
                     distortionStr, dStep, dNum, tFPNum, robustDisThd, qFPNum, matchDisThd, matchPosThd);
