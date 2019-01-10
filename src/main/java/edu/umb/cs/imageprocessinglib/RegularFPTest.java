@@ -19,26 +19,26 @@ public class RegularFPTest {
 
     public static void main(String[] args) throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-//        extractObjectsInDir("src/main/resources/image/horse/");
-//        testRegularFP("src/main/resources/image/horse/", "Motorcycle_s1.00.JPG");
+//        extractObjectsInDir("src/main/resources/image/horse1/");
+//        testRegularFP("src/main/resources/image/horse1/", "Motorcycle_s1.00.JPG");
         orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
-//        testRegularFP("src/main/resources/image/Motorcycle/", "000.JPG");
-//        testRegularFP("src/main/resources/image/horse/", "000.JPG");
-        testMaxMin("src/main/resources/image/Motorcycle/", "000.JPG");
-//        testMaxMin("src/main/resources/image/tmp2/", "000.png");
-//        testMaxMin("src/main/resources/image/horse/", "000.JPG");
-//        scaleDownImage("src/main/resources/image/horse/000.JPG");
+        testRegularFP("src/main/resources/image/motorcycle1/", "000.JPG");
+//        testRegularFP("src/main/resources/image/horse1/", "000.JPG");
+//        testMaxMin("src/main/resources/image/motorcycle1/", "000.JPG");
+//        testMaxMin("src/main/resources/image/toy_car/", "000.png");
+//        testMaxMin("src/main/resources/image/horse1/", "000.JPG");
+//        scaleDownImage("src/main/resources/image/horse1/000.JPG");
     }
 
     static void testRegularFP(String filePath, String templateImg) throws IOException {
         //hyperparameter for picking random feature points
-        int num = 200;
+        int num = 100;
 
         File tImgFile = new File(filePath + templateImg);
         if (tImgFile == null || !tImgFile.isFile())
             return;
         Mat tImg = ImageUtil.BufferedImage2Mat(ImageIO.read(tImgFile));
-        ImageFeature tIF = ImageProcessor.extractORBFeatures(tImg, 200);
+        ImageFeature tIF = ImageProcessor.extractORBFeatures(tImg, 500);
         List<KeyPoint> tKP = tIF.getObjectKeypoints().toList();
 //        System.out.printf("template key points number: %d\n", tIF.getSize());
         File dir = new File(filePath);
@@ -61,7 +61,8 @@ public class RegularFPTest {
                 ImageFeature rTIF = pickNRandomFP(tImg, tIF, num);
                 ImageFeature rQIF = pickNRandomFP(qImg, qIF, 500);
 //                ImageFeature rQIF = qIF;
-                List<DMatch> mL = matchImage(qIF, tIF);
+//                List<DMatch> mL = matchImage(qIF, tIF);
+                List<DMatch> mL = matchImage(rQIF, rTIF);
                 MatOfDMatch m = new MatOfDMatch();
                 m.fromList(mL);
 

@@ -13,8 +13,7 @@ import org.opencv.features2d.ORB;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -27,11 +26,21 @@ public class Main {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 //        testOpenCV();
 //        testTensorFlow();
-        testRobustFeature("src/main/resources/image/Motorcycle/", "000.JPG");
-//        testRobustFeature("src/main/resources/image/tmp2/", "000.png");
-//        testRobustFeature("src/main/resources/image/horse/", "000.JPG");
+//        testRobustFeature("src/main/resources/image/motorcycle1/", "005.JPG");
+//        testRobustFeature("src/main/resources/image/toy_car/", "000.png");
+//        testRobustFeature("src/main/resources/image/horse1/", "000.JPG");
+//        testRobustFeature("src/main/resources/image/furry_dog/", "0.png");
+//        testRobustFeature("src/main/resources/image/horse2/", "-05.JPG");
+//        testRobustFeature("src/main/resources/image/girl_statue/", "5.png");
+//        testRobustFeature("src/main/resources/image/van_gogh/", "5.png");
+//        testRobustFeature("src/main/resources/image/baby_cream/", "0.png");
 //        testTFRobustFeature();
 //        testDistortion();
+
+        testRobustFeature("src/main/resources/image/toy_bear/", 0, null, DistortionType.LeftPers,
+                5, 10, 100, 300, 500, 300, 20, 8);
+        testRobustFeature("src/main/resources/image/furry_bear/", 50, null, DistortionType.RightPers,
+                5, 10, 100, 300, 500, 300, 20, 8);
     }
 
     private static void testDistortion() throws IOException {
@@ -41,7 +50,7 @@ public class Main {
 //        List<Mat> distortedImg = ImageProcessor.rotatedImage(img, 5f, 5);
 //        List<Mat> distortedImg = ImageProcessor.scaleImage(img, -0.1f, 5);
 //        List<Mat> distortedImg = ImageProcessor.lightImage(img, -0.1f, 5);
-        List<Mat> distortedImg = ImageProcessor.changeToLeftPerspective(img, 10f, 5);
+        List<Mat> distortedImg = ImageProcessor.changeToLeftPerspective(img, 10f, 10);
 //        List<Mat> distortedImg = ImageProcessor.changeToRightPerspective(img, 10f, 5);
 //        List<Mat> distortedImg = ImageProcessor.changeToBottomPerspective(img, 10f, 5);
 //        List<Mat> distortedImg = ImageProcessor.changeToTopPerspective(img, 10f, 5);
@@ -186,26 +195,148 @@ public class Main {
 //        System.out.printf("Robust-Regular match number: %d, Precision: %f\n", mymatches3.total(), (float)mymatches3.total()/ tIF.getSize());
     }
 
+    enum DistortionType {
+        LeftPers,
+        RightPers,
+        BottomPers,
+        TopPers,
+        Scale,
+        Light,
+        Rotation
+    }
+
+    /**
+     *
+     * @param filePath          the path of directory in where the images are
+     * @param templateValue     the value used as template
+     * @param logName           file used to log. If logName is not given, directory_name+parameters will be used
+     * @param dType             what kind of distortion is used to generate distorted images
+     * @param dStep             step value for distortion
+     * @param dNum              how many distorted images should be generated
+     * @param tFPNum            the number of template feature points
+     * @param robustDisThd      matching distance threshold used in extracting robust feature point
+     * @param qFPNum            the number of feature points in query images
+     * @param matchDisThd       matching distance threshold used in matching query images and template image
+     * @param matchPosThd       position distance threshold used in matchWithRegression
+     * @param testNum           how many tests should be done
+     * @throws IOException
+     * TODO: need to think about what if templateAngle is required to be a float value
+     */
+    static void testRobustFeature(String filePath,
+                                  int templateValue,
+                                  String logName,
+                                  DistortionType dType,
+                                  float dStep,
+                                  int dNum,
+                                  int tFPNum,
+                                  int robustDisThd,
+                                  int qFPNum,
+                                  int matchDisThd,
+                                  int matchPosThd,
+                                  int testNum
+                                  ) throws IOException {
+        String hyperParams = "*********hyperparameters**********\n" +
+                "ratioTest: knnRatioThreshold 0.7; " +
+                "ransac: reproj_thd 15, max_itd 2000, conf 0.995; " +
+                "matchWithRegression: posThd min(posThd,avg_pos_dif*1.5f)), ransac_condition symMatches.length>20";
+        String tFName = filePath + templateValue + ".png";
+        Mat tImg = ImageUtil.loadMatImage(tFName);
+        List<Mat> distortedImg = null;
+        float testStep = 0;
+        String distortionStr = "";  //used in log file name
+        switch (dType) {
+            case LeftPers:
+                distortedImg = ImageProcessor.changeToLeftPerspective(tImg, dStep, dNum);
+                testStep = 5;
+                distortionStr = "lp";
+                break;
+            case RightPers:
+                distortedImg = ImageProcessor.changeToRightPerspective(tImg, dStep, dNum);
+                testStep = -5;
+                distortionStr = "rp";
+                break;
+            case TopPers:
+                distortedImg = ImageProcessor.changeToTopPerspective(tImg, dStep, dNum);
+                distortionStr = "tp";
+                break;
+            case BottomPers:
+                distortedImg = ImageProcessor.changeToBottomPerspective(tImg, dStep, dNum);
+                distortionStr = "bp";
+                break;
+            case Scale:
+                distortedImg = ImageProcessor.scaleImage(tImg, dStep, dNum);
+                distortionStr = "s";
+                break;
+            case Light:
+                distortedImg = ImageProcessor.lightImage(tImg, dStep, dNum);
+                distortionStr = "l";
+                break;
+            case Rotation:
+                distortedImg = ImageProcessor.rotatedImage(tImg, dStep, dNum);
+                distortionStr = "r";
+                break;
+            default:
+                break;
+        }
+
+        File dir = new File(filePath);
+        //prepare for writing to log file
+        if (logName == null) {
+            logName = dir.getName() + "_" + distortionStr + templateValue + "_ds" + dStep + "_dn" + dNum + "_tfpn" + tFPNum + "_rdt" + robustDisThd
+            + "_qfpn" + qFPNum + "_mdt" + matchDisThd + "_mpt" + matchPosThd + "_tn" + testNum;
+        }
+        File logFile = new File(logName);
+        logFile.createNewFile();
+        PrintWriter pw = new PrintWriter(new FileOutputStream(logFile, true));
+        pw.println(hyperParams);
+
+        ImageFeature tIF = ImageProcessor.extractRobustFeatures(tImg, distortedImg, qFPNum, robustDisThd, DescriptorType.ORB, null);
+
+        System.out.printf("*****%s*******\n", dir.getName());
+        for (int k=0; k < testNum; k++) {
+            int i = templateValue + (int)testStep * k;
+            Mat qImg = ImageUtil.loadMatImage(filePath+i+".png");
+            //assume we use ORB feature points in default
+            ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, tFPNum);
+            MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
+            System.out.printf("%d: %f\n", i, (float)matches.total() / tIF.getSize());
+            pw.printf("%d: %f\n", i, (float)matches.total() / tIF.getSize());
+        }
+
+        //assume all false image are named as "f"+number+".png"
+        for (int i=1; i<=Integer.MAX_VALUE ;i++) {
+            File fImg = new File(filePath + "f" + i + ".png");
+            if (!fImg.exists()) break;
+            Mat qImg = ImageUtil.loadMatImage(fImg.getAbsolutePath());
+            //assume we use ORB feature points in default
+            ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, tFPNum);
+            MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
+            System.out.printf("f%d: %f\n", i, (float)matches.total() / tIF.getSize());
+            pw.printf("f%d: %f\n", i, (float)matches.total() / tIF.getSize());
+        }
+        pw.close();
+    }
+
     private static void testRobustFeature(String filePath, String templateImg) throws IOException {
         Mat tImg = ImageUtil.loadMatImage(filePath+templateImg);
 //        List<Mat> distortedImg = ImageProcessor.rotatedImage(img, 5f, 5);
 //        List<Mat> distortedImg = ImageProcessor.scaleImage(img, -0.1f, 5);
 //        List<Mat> distortedImg = ImageProcessor.lightImage(img, -0.1f, 5);
-        List<Mat> distortedImg = ImageProcessor.changeToLeftPerspective(tImg, 10f, 7);
-//        List<Mat> distortedImg = ImageProcessor.changeToRightPerspective(tImg, 10f, 5);
+//        List<Mat> distortedImg = ImageProcessor.changeToLeftPerspective(tImg, 5f, 10);
+        List<Mat> distortedImg = ImageProcessor.changeToRightPerspective(tImg, 5f, 10);
 //        List<Mat> distortedImg = ImageProcessor.changeToBottomPerspective(img, 10f, 5);
 //        List<Mat> distortedImg = ImageProcessor.changeToTopPerspective(img, 10f, 5);
         for (Mat i : distortedImg) {
-            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(i));
+//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(i));
         }
         List<Integer> minTracker = new ArrayList<>();
         ImageFeature tIF = ImageProcessor.extractRobustFeatures(tImg, distortedImg, 100, 300, DescriptorType.ORB, minTracker);
         System.out.printf("number of template robust FP: %d\n", tIF.getSize());
         //calculate min precision
-        List<Float> minPrecisionTracker = IntStream.range(0, minTracker.size()).mapToObj(i->{
+        List<Float> minRatioTracker = IntStream.range(0, minTracker.size()).mapToObj(i->{
             return (float)minTracker.get(i)/(i+1);
         }).collect(Collectors.toList());
-        System.out.printf("min num:\t%s\nmin precision:\t%s\n", minTracker, minPrecisionTracker);
+        System.out.printf("min num:\t%s\nmin precision:\t%s\n", minTracker, minRatioTracker);
 
         //test on real images
         File dir = new File(filePath);
@@ -218,7 +349,7 @@ public class Main {
                     continue;
                 Mat qImg = ImageUtil.loadMatImage(f.getAbsolutePath());
                 ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 500);
-                MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, 300, 20);
+                MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, 500, 20);
                 System.out.printf("%s: %f\n", f.getName(), (float)matches.total() / tIF.getSize());
                 //display matches
                 Mat display = new Mat();

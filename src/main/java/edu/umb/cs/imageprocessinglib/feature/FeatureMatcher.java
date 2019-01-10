@@ -188,7 +188,7 @@ public class FeatureMatcher {
 
         DMatch[] dMatches = symMatches.toArray();
 
-        System.out.printf("dmatch size:%d\n",dMatches.length);
+//        System.out.printf("dmatch size:%d\n",dMatches.length);
         //record which template key point is matched already
         List<Boolean> tepTag = new ArrayList<>(matches1.size());
         //record which query key point is matched already
@@ -226,7 +226,7 @@ public class FeatureMatcher {
             double diffy = Math.abs(ey-kp1.pt.y);
             positionThd += Math.max(diffx, diffy);
         }
-        posThd = (int)Math.min(20,(int)(positionThd/dMatches.length*1.5f));
+        posThd = (int)Math.min(posThd,(int)(positionThd/dMatches.length*1.5f));
 
         //System.out.printf("posThd:%d\n",posThd);
         List<List<DMatch>> candidates = new ArrayList<>();
