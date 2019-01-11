@@ -22,12 +22,16 @@ public class RegularFPTest {
 //        extractObjectsInDir("src/main/resources/image/horse1/");
 //        testRegularFP("src/main/resources/image/horse1/", "Motorcycle_s1.00.JPG");
         orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
-        testRegularFP("src/main/resources/image/motorcycle1/", "000.JPG");
+//        testRegularFP("src/main/resources/image/motorcycle1/", "000.JPG");
 //        testRegularFP("src/main/resources/image/horse1/", "000.JPG");
 //        testMaxMin("src/main/resources/image/motorcycle1/", "000.JPG");
 //        testMaxMin("src/main/resources/image/toy_car/", "000.png");
 //        testMaxMin("src/main/resources/image/horse1/", "000.JPG");
 //        scaleDownImage("src/main/resources/image/horse1/000.JPG");
+        String[] dirNames = {"lego_man", "shoe"};//, "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup"};
+        for (String dir : dirNames) {
+            scaleDownImage("src/main/resources/image/"+dir+"/0.png");
+        }
     }
 
     static void testRegularFP(String filePath, String templateImg) throws IOException {
@@ -90,16 +94,15 @@ public class RegularFPTest {
     }
 
     static void scaleDownImage(String filePath) throws IOException {
-        File f = new File(filePath);
-        Mat img = ImageUtil.BufferedImage2Mat(ImageIO.read(f));
-        String dirPath = f.getParent()+"_scale";
+        Mat img = ImageUtil.loadMatImage(filePath);
+        String dirPath = new File(filePath).getParent()+"_scale";
         new File(dirPath).mkdir();
         for (float s=0.95f; s >= 0.5f; s-=0.05f) {
             Mat sImg = ImageUtil.scaleImage(img, s);
 //            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(sImg));
-            ImageUtil.saveImage(ImageUtil.Mat2BufferedImage(sImg), dirPath + "/s"+String.format("%.2f.JPG",s));
+            ImageUtil.saveImage(ImageUtil.Mat2BufferedImage(sImg), dirPath + String.format("/%d.png",(int)Math.ceil(s * 100)));
         }
-        ImageUtil.saveImage(ImageUtil.Mat2BufferedImage(img), dirPath + "/s1.00.JPG");
+        ImageUtil.saveImage(ImageUtil.Mat2BufferedImage(img), dirPath + "/100.png");
     }
 
     static void extractObjectsInDir(String filePath) throws IOException {

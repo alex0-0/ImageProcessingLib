@@ -34,23 +34,26 @@ public class Main {
 //        testRobustFeature("src/main/resources/image/girl_statue/", "5.png");
 //        testRobustFeature("src/main/resources/image/van_gogh/", "5.png");
 //        testRobustFeature("src/main/resources/image/toy_bear/", "0.png");
+//        testRobustFeature("src/main/resources/image/horse_scale/", "s1.00.JPG");
 //        testTFRobustFeature();
 //        testDistortion();
 
-        String[] dirNames = {"lego_man", "shoe", "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup"};
-        for (String dir : dirNames) {
-            for (int i=0; i <= 60; i+=10) {
-                testRobustFeature("src/main/resources/image/"+dir+"/", i, dir+"_left_robust_fp_test", false, DistortionType.LeftPers,
-                        5, 10, 100, 300, 500, 500, 20, 8);
-                int k = 350-i;
-                testRobustFeature("src/main/resources/image/"+dir+"/", k, dir+"_right_robust_fp_test", false, DistortionType.RightPers,
-                        5, 10, 100, 300, 500, 500, 20, 8);
-            }
-        }
-//        testRobustFeature("src/main/resources/image/van_gogh/", 0, null, true,  DistortionType.LeftPers,
-//                5, 10, 100, 300, 500, 500, 20, 8);
-//        testRobustFeature("src/main/resources/image/furry_bear/", 50, null, true, DistortionType.RightPers,
-//                5, 10, 100, 300, 500, 300, 20, 8);
+//        String[] dirNames = {"lego_man", "shoe", "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup"};
+//        for (String dir : dirNames) {
+//            for (int i=0; i <= 60; i+=10) {
+//                testRobustFeature("src/main/resources/image/"+dir+"/", i, dir+"_left_robust_fp_test", false, DistortionType.LeftPers,
+//                        5, 10, 100, 300, 500, 300, 20, 8);
+//                int k = 350-i;
+//                testRobustFeature("src/main/resources/image/"+dir+"/", k, dir+"_right_robust_fp_test", false, DistortionType.RightPers,
+//                        5, 10, 100, 300, 500, 300, 20, 8);
+//            }
+//        }
+//        testRobustFeature("src/main/resources/image/furry_elephant/", 350, null, true,  DistortionType.RightPers,
+//                5, 10, 100, 300, 500, 300, 20, 6);
+//        testRobustFeature("src/main/resources/image/furry_bear/", 50, "ttt_log", true,  DistortionType.LeftPers,
+//                5, 10, 100, 300, 500, 300, 20, 6);
+        testRobustFeature("src/main/resources/image/lego_man_scale/", 100, "ttt_log", true, DistortionType.Scale,
+                0.05f, 10, 100, 300, 500, 300, 20, 8);
     }
 
     private static void testDistortion() throws IOException {
@@ -255,7 +258,7 @@ public class Main {
         String tFName = filePath + templateValue + ".png";
         Mat tImg = ImageUtil.loadMatImage(tFName);
         List<Mat> distortedImg = null;
-        float testStep = 0;
+        int testStep = 0;
         String distortionStr = "";  //used in log file name
         switch (dType) {
             case LeftPers:
@@ -278,6 +281,7 @@ public class Main {
                 break;
             case Scale:
                 distortedImg = ImageProcessor.scaleImage(tImg, dStep, dNum);
+                testStep = -5;
                 distortionStr = "s";
                 break;
             case Light:
@@ -309,7 +313,7 @@ public class Main {
 
         System.out.printf("-----%s-------\n", dir.getName());
         for (int k=1; k <= testNum; k++) {
-            int i = templateValue + (int)testStep * k;
+            int i = templateValue + testStep * k;
             Mat qImg = ImageUtil.loadMatImage(filePath+i+".png");
             //assume we use ORB feature points in default
             ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
@@ -317,7 +321,7 @@ public class Main {
             float p = (float)matches.total() / tIF.getSize();
             System.out.printf("%d: %f\n", i, p);
 //            pw.printf("%d: %f\n", i, (float)matches.total() / tIF.getSize());
-            fNames.add(""+(int)testStep*k);
+            fNames.add(""+testStep*k);
             pres.add(p);
             //display matches
 //            Mat display = new Mat();
@@ -364,9 +368,9 @@ public class Main {
     private static void testRobustFeature(String filePath, String templateImg) throws IOException {
         Mat tImg = ImageUtil.loadMatImage(filePath+templateImg);
 //        List<Mat> distortedImg = ImageProcessor.rotatedImage(img, 5f, 5);
-//        List<Mat> distortedImg = ImageProcessor.scaleImage(img, -0.1f, 5);
+        List<Mat> distortedImg = ImageProcessor.scaleImage(tImg, -0.1f, 5);
 //        List<Mat> distortedImg = ImageProcessor.lightImage(img, -0.1f, 5);
-        List<Mat> distortedImg = ImageProcessor.changeToLeftPerspective(tImg, 5f, 10);
+//        List<Mat> distortedImg = ImageProcessor.changeToLeftPerspective(tImg, 5f, 10);
 //        List<Mat> distortedImg = ImageProcessor.changeToRightPerspective(tImg, 5f, 10);
 //        List<Mat> distortedImg = ImageProcessor.changeToBottomPerspective(img, 10f, 5);
 //        List<Mat> distortedImg = ImageProcessor.changeToTopPerspective(img, 10f, 5);
