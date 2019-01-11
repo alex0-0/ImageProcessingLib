@@ -137,7 +137,6 @@ public class RegularFPTest {
         Mat des = new Mat();
         kps = pickNRandom(kps, n);
         MatOfKeyPoint matOfKeyPoint = new MatOfKeyPoint();
-        ;
         matOfKeyPoint.fromList(kps);
         orb.compute(image, matOfKeyPoint, des);
         return new ImageFeature(matOfKeyPoint, des);
