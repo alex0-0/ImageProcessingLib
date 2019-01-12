@@ -8,17 +8,12 @@ import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import edu.umb.cs.imageprocessinglib.util.StorageUtil;
 import org.opencv.core.*;
 import org.opencv.features2d.Features2d;
-import org.opencv.features2d.FlannBasedMatcher;
-import org.opencv.features2d.ORB;
 
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static org.opencv.core.CvType.CV_32F;
 
 public class Main {
 
@@ -52,7 +47,9 @@ public class Main {
 //                5, 10, 100, 300, 500, 300, 20, 6);
 //        testRobustFeature("src/main/resources/image/furry_bear/", 50, "ttt_log", true,  DistortionType.LeftPers,
 //                5, 10, 100, 300, 500, 300, 20, 6);
-        testRobustFeature("src/main/resources/image/lego_man_scale/", 100, "ttt_log", true, DistortionType.Scale,
+//        testRobustFeature("src/main/resources/image/lego_man_scale/", 100, "ttt_log", true, DistortionType.ScaleDown,
+//                -0.05f, 10, 100, 300, 500, 300, 20, 8);
+        testRobustFeature("src/main/resources/image/lego_man_scale/", 60, "ttt_log", true, DistortionType.ScaleUp,
                 0.05f, 10, 100, 300, 500, 300, 20, 8);
     }
 
@@ -213,7 +210,8 @@ public class Main {
         RightPers,
         BottomPers,
         TopPers,
-        Scale,
+        ScaleDown,
+        ScaleUp,
         Light,
         Rotation
     }
@@ -279,10 +277,15 @@ public class Main {
                 distortedImg = ImageProcessor.changeToBottomPerspective(tImg, dStep, dNum);
                 distortionStr = "bp";
                 break;
-            case Scale:
+            case ScaleDown:
                 distortedImg = ImageProcessor.scaleImage(tImg, dStep, dNum);
                 testStep = -5;
-                distortionStr = "s";
+                distortionStr = "sd";
+                break;
+            case ScaleUp:
+                distortedImg = ImageProcessor.scaleImage(tImg, dStep, dNum);
+                testStep = 5;
+                distortionStr = "su";
                 break;
             case Light:
                 distortedImg = ImageProcessor.lightImage(tImg, dStep, dNum);
