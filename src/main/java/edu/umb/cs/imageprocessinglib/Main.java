@@ -21,36 +21,42 @@ public class Main {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 //        testOpenCV();
 //        testTensorFlow();
-//        testRobustFeature("src/main/resources/image/motorcycle1/", "005.JPG");
-//        testRobustFeature("src/main/resources/image/toy_car/", "000.png");
-//        testRobustFeature("src/main/resources/image/horse1/", "000.JPG");
-//        testRobustFeature("src/main/resources/image/furry_dog/", "0.png");
-//        testRobustFeature("src/main/resources/image/horse2/", "-05.JPG");
-//        testRobustFeature("src/main/resources/image/girl_statue/", "5.png");
-//        testRobustFeature("src/main/resources/image/van_gogh/", "5.png");
-//        testRobustFeature("src/main/resources/image/toy_bear/", "0.png");
-//        testRobustFeature("src/main/resources/image/horse_scale/", "s1.00.JPG");
+//        testRobustFeature("src/main/resources/image/single_distortion/motorcycle1/", "005.JPG");
+//        testRobustFeature("src/main/resources/image/single_distortion/toy_car/", "000.png");
+//        testRobustFeature("src/main/resources/image/single_distortion/horse1/", "000.JPG");
+//        testRobustFeature("src/main/resources/image/single_distortion/furry_dog/", "0.png");
+//        testRobustFeature("src/main/resources/image/single_distortion/horse2/", "-05.JPG");
+//        testRobustFeature("src/main/resources/image/single_distortion/girl_statue/", "5.png");
+//        testRobustFeature("src/main/resources/image/single_distortion/van_gogh/", "5.png");
+//        testRobustFeature("src/main/resources/image/single_distortion/toy_bear/", "0.png");
+//        testRobustFeature("src/main/resources/image/single_distortion/horse_scale/", "s1.00.JPG");
 //        testTFRobustFeature();
 //        testDistortion();
 
 //        String[] dirNames = {"lego_man", "shoe", "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup"};
 //        for (String dir : dirNames) {
 //            for (int i=0; i <= 60; i+=10) {
-//                testRobustFeature("src/main/resources/image/"+dir+"/", i, dir+"_left_robust_fp_test", false, DistortionType.LeftPers,
-//                        5, 10, 100, 300, 500, 300, 20, 8);
+//                testRobustFeature("src/main/resources/image/single_distortion/"+dir+"/", i, dir+"_left_robust_fp_test", false, new Distortion(DistortionType.LeftPers,
+//                        5, 10, 100, 300), 500, 300, 20, 8);
 //                int k = 350-i;
-//                testRobustFeature("src/main/resources/image/"+dir+"/", k, dir+"_right_robust_fp_test", false, DistortionType.RightPers,
-//                        5, 10, 100, 300, 500, 300, 20, 8);
+//                testRobustFeature("src/main/resources/image/single_distortion/"+dir+"/", k, dir+"_right_robust_fp_test", false, new Distortion(DistortionType.RightPers,
+//                        5, 10, 100, 300), 500, 300, 20, 8);
 //            }
 //        }
-//        testRobustFeature("src/main/resources/image/furry_elephant/", 350, null, true,  DistortionType.RightPers,
-//                5, 10, 100, 300, 500, 300, 20, 6);
-//        testRobustFeature("src/main/resources/image/furry_bear/", 50, "ttt_log", true,  DistortionType.LeftPers,
-//                5, 10, 100, 300, 500, 300, 20, 6);
-//        testRobustFeature("src/main/resources/image/lego_man_scale/", 100, "ttt_log", true, DistortionType.ScaleDown,
-//                -0.05f, 10, 100, 300, 500, 300, 20, 8);
-        testRobustFeature("src/main/resources/image/lego_man_scale/", 60, "ttt_log", true, DistortionType.ScaleUp,
-                0.05f, 10, 100, 300, 500, 300, 20, 8);
+//        testRobustFeature("src/main/resources/image/single_distortion/furry_elephant/", 350, null, true, new Distortion(DistortionType.RightPers,
+//                5, 10, 100, 300), 500, 300, 20, 6);
+//        testRobustFeature("src/main/resources/image/single_distortion/furry_bear/", 50, "ttt_log", true, new Distortion(DistortionType.LeftPers,
+//                5, 10, 100, 300), 500, 300, 20, 6);
+//        testRobustFeature("src/main/resources/image/single_distortion/shoe_scale/", 60, "ttt_log", true, new Distortion(DistortionType.ScaleUp,
+//                0.05f, 10, 100, 300), 500, 300, 20, 8);
+//        testRobustFeature("src/main/resources/image/single_distortion/shoe_scale/", 60, "ttt_log", true, new Distortion(DistortionType.ScaleUp,
+//                0.05f, 10, 100, 300), 500, 300, 20, 8);
+        testCombinedDistortion("src/main/resources/image/multi_distortion/detergent/", "NP1_0.jpg", null, true,
+                new Distortion[]{
+                        new Distortion(DistortionType.TopPers, 5f, 10, 100, 300),
+                        new Distortion(DistortionType.RightPers, 5f, 10, 100, 300)
+                },
+                500, 300, 20, 8);
     }
 
     private static void testDistortion() throws IOException {
@@ -216,17 +222,37 @@ public class Main {
         Rotation
     }
 
+    static class Distortion {
+        DistortionType dType;
+        float dStep;
+        int dNum;
+        int tFPNum;
+        int robustDisThd;
+
+        /**
+         *
+         * @param dType             what kind of distortion is used to generate distorted images
+         * @param dStep             step value for distortion
+         * @param dNum              how many distorted images should be generated
+         * @param tFPNum            the number of template feature points
+         * @param robustDisThd      matching distance threshold used in extracting robust feature point
+         */
+        public Distortion(DistortionType dType, float dStep, int dNum, int tFPNum, int robustDisThd) {
+            this.dType = dType;
+            this.dStep = dStep;
+            this.dNum = dNum;
+            this.tFPNum = tFPNum;
+            this.robustDisThd = robustDisThd;
+        }
+    }
+
     /**
      *
      * @param filePath          the path of directory in where the images are
      * @param templateValue     the value used as template
      * @param logName           file used to log. If logName is not given, directory_name+parameters will be used
-     * @param rewriteHP           whether the method should write down hyperparameters again if the file already exist
-     * @param dType             what kind of distortion is used to generate distorted images
-     * @param dStep             step value for distortion
-     * @param dNum              how many distorted images should be generated
-     * @param tFPNum            the number of template feature points
-     * @param robustDisThd      matching distance threshold used in extracting robust feature point
+     * @param rewriteHP         whether the method should write down hyperparameters again if the file already exist
+     * @param distortion        distortion types and parameters
      * @param qFPNum            the number of feature points in query images
      * @param matchDisThd       matching distance threshold used in matching query images and template image
      * @param matchPosThd       position distance threshold used in matchWithRegression
@@ -238,11 +264,7 @@ public class Main {
                                   int templateValue,
                                   String logName,
                                   boolean rewriteHP,
-                                  DistortionType dType,
-                                  float dStep,
-                                  int dNum,
-                                  int tFPNum,
-                                  int robustDisThd,
+                                  Distortion distortion,
                                   int qFPNum,
                                   int matchDisThd,
                                   int matchPosThd,
@@ -258,7 +280,11 @@ public class Main {
         List<Mat> distortedImg = null;
         int testStep = 0;
         String distortionStr = "";  //used in log file name
-        switch (dType) {
+        float dStep = distortion.dStep;
+        int dNum = distortion.dNum;
+        int tFPNum = distortion.tFPNum;
+        int robustDisThd = distortion.robustDisThd;
+        switch (distortion.dType) {
             case LeftPers:
                 distortedImg = ImageProcessor.changeToLeftPerspective(tImg, dStep, dNum);
                 testStep = 5;
@@ -303,7 +329,7 @@ public class Main {
         //prepare for writing to log file
         if (logName == null) {
             logName = dir.getName() + "_" + distortionStr + templateValue + "_ds" + dStep + "_dn" + dNum + "_tfpn" + tFPNum + "_rdt" + robustDisThd
-            + "_qfpn" + qFPNum + "_mdt" + matchDisThd + "_mpt" + matchPosThd + "_tn" + testNum;
+                    + "_qfpn" + qFPNum + "_mdt" + matchDisThd + "_mpt" + matchPosThd + "_tn" + testNum;
         }
         File logFile = new File(logName);
         boolean append = logFile.exists();
@@ -327,9 +353,9 @@ public class Main {
             fNames.add(""+testStep*k);
             pres.add(p);
             //display matches
-//            Mat display = new Mat();
-//            Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
-//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+            Mat display = new Mat();
+            Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
+            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
         }
 
         //assume all false image are named as "f"+number+".png"
@@ -346,9 +372,9 @@ public class Main {
             fNames.add("f"+i);
             pres.add(p);
             //display matches
-//            Mat display = new Mat();
-//            Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
-//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+            Mat display = new Mat();
+            Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
+            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
         }
         if (!append || rewriteHP) {
             pw.println(hyperParams);
@@ -364,6 +390,158 @@ public class Main {
         pw.print(templateValue + "\t");
         for (float p : pres)
             pw.printf("%.2f\t",p);
+        pw.println();   //next line
+        pw.close();
+    }
+
+    static void testCombinedDistortion(String filePath,
+                                       String tFile,
+                                       String logName,
+                                       boolean rewriteHP,
+                                       Distortion[] ds,
+                                       int qFPNum,
+                                       int matchDisThd,
+                                       int matchPosThd,
+                                       int testNum
+                                       ) throws IOException {
+        String hyperParams = "*********hyperparameters**********\n" +
+                "ratioTest: knnRatioThreshold 0.7; " +
+                "ransac: reproj_thd 15, max_itd 2000, conf 0.995; " +
+                "matchWithRegression: posThd min(posThd,avg_pos_dif*1.5f)), ransac_condition symMatches.length>20, intern-quartile 25%~75%, " +
+                "intern-quartile init min dis thd 5, init diff ratio 2";
+        String tFName = filePath + tFile;
+        Mat tImg = ImageUtil.loadMatImage(tFName);
+        List<ImageFeature> tIFs = new ArrayList<>();
+        String distortionStr = tFile.split("\\.")[0];  //used in log file name
+        int testStep = 0;
+        for (Distortion d : ds) {
+            List<Mat> distortedImg = null;
+            float dStep = d.dStep;
+            int dNum = d.dNum;
+            int tFPNum = d.tFPNum;
+            int robustDisThd = d.robustDisThd;
+            distortionStr += "_";
+            switch (d.dType) {
+                case LeftPers:
+                    distortedImg = ImageProcessor.changeToLeftPerspective(tImg, dStep, dNum);
+                    testStep = -3;
+                    distortionStr += "lp";
+                    break;
+                case RightPers:
+                    distortedImg = ImageProcessor.changeToRightPerspective(tImg, dStep, dNum);
+                    testStep = 3;
+                    distortionStr += "rp";
+                    break;
+                case TopPers:
+                    distortedImg = ImageProcessor.changeToTopPerspective(tImg, dStep, dNum);
+                    distortionStr += "tp";
+                    break;
+                case BottomPers:
+                    distortedImg = ImageProcessor.changeToBottomPerspective(tImg, dStep, dNum);
+                    distortionStr += "bp";
+                    break;
+                case ScaleDown:
+                    distortedImg = ImageProcessor.scaleImage(tImg, dStep, dNum);
+                    testStep = -5;
+                    distortionStr += "sd";
+                    break;
+                case ScaleUp:
+                    distortedImg = ImageProcessor.scaleImage(tImg, dStep, dNum);
+                    testStep = 5;
+                    distortionStr += "su";
+                    break;
+                case Light:
+                    distortedImg = ImageProcessor.lightImage(tImg, dStep, dNum);
+                    distortionStr += "l";
+                    break;
+                case Rotation:
+                    distortedImg = ImageProcessor.rotatedImage(tImg, dStep, dNum);
+                    distortionStr += "r";
+                    break;
+                default:
+                    break;
+            }
+            distortionStr += "_ds" + dStep + "_dn" + dNum + "_tfpn" + tFPNum + "_rdt" + robustDisThd;
+            tIFs.add(ImageProcessor.extractRobustFeatures(tImg, distortedImg, tFPNum, robustDisThd, DescriptorType.ORB, null));
+        }
+
+        File dir = new File(filePath);
+        //prepare for writing to log file
+        if (logName == null) {
+            logName = dir.getName() + "_" + distortionStr + "_qfpn" + qFPNum + "_mdt" + matchDisThd + "_mpt" + matchPosThd + "_tn" + testNum;
+        }
+        File logFile = new File(logName);
+        boolean append = logFile.exists();
+        logFile.createNewFile();
+        PrintWriter pw = new PrintWriter(new FileOutputStream(logFile, true));
+        List<String> fNames = new ArrayList<>();
+        List<Float> pres = new ArrayList<>();
+
+        int templateValue = new Integer(tFile.split("\\.")[0].split("_")[1]);
+        System.out.printf("-----%s-------\n", dir.getName());
+        int round = 0;
+        for (ImageFeature tIF : tIFs) {
+            round++;
+            for (int d=1; d <=3; d++) {
+                System.out.printf("******%d*******\n",d);
+                for (int k = 1; k <= testNum; k++) {
+                    int i = templateValue + testStep * k;
+                    Mat qImg = ImageUtil.loadMatImage(filePath + "NP" + d + "_" + i + ".jpg");
+                    //assume we use ORB feature points in default
+                    ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
+                    MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
+                    float p = (float) matches.total() / tIF.getSize();
+                    System.out.printf("%d: %f\n", i, p);
+//            pw.printf("%d: %f\n", i, (float)matches.total() / tIF.getSize());
+                    if (round <= 1)
+                        fNames.add("" + d + "_" + testStep * k);
+                    pres.add(p);
+                    //display matches
+                    Mat display = new Mat();
+                    Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), matches, display);
+                    ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+                }
+            }
+            //assume all false image are named as "f"+number+".png"
+            for (int i = 1; i <= Integer.MAX_VALUE; i++) {
+                File fImg = new File(filePath + "f" + i + ".png");
+                if (!fImg.exists()) break;
+                Mat qImg = ImageUtil.loadMatImage(fImg.getAbsolutePath());
+                //assume we use ORB feature points in default
+                ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
+                MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
+                float p = (float) matches.total() / tIF.getSize();
+                System.out.printf("f%d: %f\n", i, p);
+//            pw.printf("f%d: %f\n", i, (float)matches.total() / tIF.getSize());
+                if (round <= 1)
+                    fNames.add("f" + i);
+                pres.add(p);
+                //display matches
+                Mat display = new Mat();
+                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), matches, display);
+                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+            }
+        }
+        if (!append || rewriteHP) {
+            pw.println(hyperParams);
+            pw.printf("distortions: %s, qFPNum: %d, matchDisThd: %d, matchPosThd: %d\n",
+                    distortionStr, qFPNum, matchDisThd, matchPosThd);
+
+            pw.printf("-----%s, %s-------\n", dir.getName(), tFile);
+            pw.print("tIF/change\t");
+            for (String f : fNames)
+                pw.print(f + "\t");
+            pw.println();   //next line
+        }
+        pw.print(templateValue + "\t");
+        for (int i=0; i < pres.size(); i++) {
+            float p = pres.get(i);
+            pw.printf("%.2f\t", p);
+            if ((i+1) % fNames.size() == 0 && i < pres.size()-1) {
+                pw.println();   //next line
+                pw.print(templateValue + "\t");
+            }
+        }
         pw.println();   //next line
         pw.close();
     }
@@ -403,13 +581,12 @@ public class Main {
                 MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, 500, 20);
                 System.out.printf("%s: %f\n", f.getName(), (float)matches.total() / tIF.getSize());
                 //display matches
-//                Mat display = new Mat();
-//                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
-//                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+                Mat display = new Mat();
+                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
+                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
             }
         }
     }
-
 
 
     private static void testTFRobustFeature() throws IOException {
@@ -448,7 +625,7 @@ public class Main {
     private static void testTensorFlow() throws IOException {
 //      String IMAGE = "/image/cow-and-bird.jpg";
         //String IMAGE = "/image/eagle.jpg";
-        String imgPath = "src/main/resources/image/test_20.jpg";
+        String imgPath = "src/main/resources/image/NP1_0.jpg";
         BufferedImage img = ImageUtil.loadImage(imgPath);
         ObjectDetector objectDetector = new ObjectDetector();
         objectDetector.init();
@@ -458,7 +635,7 @@ public class Main {
             System.out.printf("Object: %s - confidence: %f box: %s\n",
                     recognition.getTitle(), recognition.getConfidence(), recognition.getLocation());
 
-            StorageUtil.saveRecognitionToFile(recognition,"test" + (++i));
+//            StorageUtil.saveRecognitionToFile(recognition,"test" + (++i));
 //            Recognition temp=StorageUtil.readRecognitionFromFile("test");
 //            ImageUtil.displayImage(temp.loadPixels());
 //            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(temp.getPixels()));
