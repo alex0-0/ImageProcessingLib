@@ -19,7 +19,7 @@ public class RegularFPTest {
 
     public static void main(String[] args) throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-//        extractObjectsInDir("src/main/resources/image/horse1/");
+        extractObjectsInDir("src/main/resources/image/multi_distortion/coffee_mate/");
 //        testRegularFP("src/main/resources/image/horse1/", "Motorcycle_s1.00.JPG");
         orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
 //        testRegularFP("src/main/resources/image/motorcycle1/", "000.JPG");
@@ -28,10 +28,10 @@ public class RegularFPTest {
 //        testMaxMin("src/main/resources/image/toy_car/", "000.png");
 //        testMaxMin("src/main/resources/image/horse1/", "000.JPG");
 //        scaleDownImage("src/main/resources/image/horse1/000.JPG");
-        String[] dirNames = {"lego_man", "shoe"};//, "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup"};
-        for (String dir : dirNames) {
-            scaleDownImage("src/main/resources/image/"+dir+"/0.png");
-        }
+//        String[] dirNames = {"lego_man", "shoe"};//, "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup"};
+//        for (String dir : dirNames) {
+//            scaleDownImage("src/main/resources/image/"+dir+"/0.png");
+//        }
     }
 
     static void testRegularFP(String filePath, String templateImg) throws IOException {

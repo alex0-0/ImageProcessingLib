@@ -2,7 +2,6 @@ package edu.umb.cs.imageprocessinglib.feature;
 
 import edu.umb.cs.imageprocessinglib.model.DescriptorType;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
-import javafx.util.Pair;
 import org.opencv.core.DMatch;
 import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
@@ -154,7 +153,8 @@ public class FeatureDetector {
 //        List<HashSet<Integer>> tracker = trackFeatures(img, distortedImages, kp, des, listOfKeyPoints, listOfDescriptors, listOfMatches, type);
 
         MatOfKeyPoint kp = new MatOfKeyPoint();
-        List<List<Integer>> fpTrack = analyzeFPsInImages(img, distortedImages, kp, type, disThd);
+        Mat des = new Mat();
+        List<List<Integer>> fpTrack = analyzeFPsInImages(img, distortedImages, kp, des, type, disThd);
         List<Integer> sizes = fpTrack.stream().map(o->o.size()).collect(Collectors.toList());
         for (int i : sizes) {
             if (i < num)
@@ -165,13 +165,14 @@ public class FeatureDetector {
         List<KeyPoint> kpList = new ArrayList<>();
         for (int i : candidates) {
             kpList.add(tKP.get(i));
+            descriptors.push_back(des.row(i));
         }
         keyPoints.fromList(kpList);
 
-        if (type == DescriptorType.SURF)
-            surf.compute(img, keyPoints, descriptors);
-        else if (type == DescriptorType.ORB)
-            orb.compute(img, keyPoints, descriptors);
+//        if (type == DescriptorType.SURF)
+//            surf.compute(img, keyPoints, descriptors);
+//        else if (type == DescriptorType.ORB)
+//            orb.compute(img, keyPoints, descriptors);
         return true;
 
 /*
@@ -241,11 +242,10 @@ print out matching results
     }
 
     //return a list of lists containing the index of matched feature points
-    public List<List<Integer>> analyzeFPsInImages(Mat tImg, List<Mat> images, MatOfKeyPoint tKPs, DescriptorType type, int disThd) {
+    public List<List<Integer>> analyzeFPsInImages(Mat tImg, List<Mat> images, MatOfKeyPoint tKPs, Mat tDes, DescriptorType type, int disThd) {
 
         List<List<Integer>> ret = new ArrayList<>();
 
-        Mat tDes = new Mat();
         //calculate original image's key points and descriptors
         extractFeatures(tImg, tKPs, tDes, type);
 

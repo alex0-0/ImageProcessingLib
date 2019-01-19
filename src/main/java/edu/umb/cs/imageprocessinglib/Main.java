@@ -12,6 +12,7 @@ import org.opencv.features2d.Features2d;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -51,12 +52,14 @@ public class Main {
 //                0.05f, 10, 100, 300), 500, 300, 20, 8);
 //        testRobustFeature("src/main/resources/image/single_distortion/shoe_scale/", 60, "ttt_log", true, new Distortion(DistortionType.ScaleUp,
 //                0.05f, 10, 100, 300), 500, 300, 20, 8);
-        testCombinedDistortion("src/main/resources/image/multi_distortion/detergent/", "NP1_0.jpg", null, true,
+        testCombinedDistortion("src/main/resources/image/multi_distortion/detergent/", "NP2_0.jpg", null, true,
                 new Distortion[]{
-                        new Distortion(DistortionType.TopPers, 5f, 10, 100, 300),
-                        new Distortion(DistortionType.RightPers, 5f, 10, 100, 300)
+                        new Distortion(DistortionType.RightPers, 5f, 10, 60, 300),
+                        new Distortion(DistortionType.TopPers, 5f, 10, 60, 300)
                 },
                 500, 300, 20, 8);
+//        testRobustFeature("src/main/resources/image/single_distortion/detergent/", 1, "ttt_log", true,
+//                new Distortion(DistortionType.TopPers, 5f, 10, 100, 300), 500, 300, 20, 3);
     }
 
     private static void testDistortion() throws IOException {
@@ -298,6 +301,7 @@ public class Main {
             case TopPers:
                 distortedImg = ImageProcessor.changeToTopPerspective(tImg, dStep, dNum);
                 distortionStr = "tp";
+                testStep = 1;
                 break;
             case BottomPers:
                 distortedImg = ImageProcessor.changeToBottomPerspective(tImg, dStep, dNum);
@@ -323,6 +327,10 @@ public class Main {
                 break;
             default:
                 break;
+        }
+
+        for (Mat img : distortedImg) {
+            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(img));
         }
 
         File dir = new File(filePath);
@@ -394,6 +402,8 @@ public class Main {
         pw.close();
     }
 
+    static int kVStep = 18;
+    static int kHStep = 3;
     static void testCombinedDistortion(String filePath,
                                        String tFile,
                                        String logName,
@@ -478,49 +488,47 @@ public class Main {
         List<Float> pres = new ArrayList<>();
 
         int templateValue = new Integer(tFile.split("\\.")[0].split("_")[1]);
+        int vValue = new Integer(tFile.split("\\.")[0].split("_")[0].replace("NP",""));
         System.out.printf("-----%s-------\n", dir.getName());
-        int round = 0;
-        for (ImageFeature tIF : tIFs) {
-            round++;
-            for (int d=1; d <=3; d++) {
-                System.out.printf("******%d*******\n",d);
-                for (int k = 1; k <= testNum; k++) {
-                    int i = templateValue + testStep * k;
-                    Mat qImg = ImageUtil.loadMatImage(filePath + "NP" + d + "_" + i + ".jpg");
-                    //assume we use ORB feature points in default
-                    ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
-                    MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
-                    float p = (float) matches.total() / tIF.getSize();
-                    System.out.printf("%d: %f\n", i, p);
-//            pw.printf("%d: %f\n", i, (float)matches.total() / tIF.getSize());
-                    if (round <= 1)
-                        fNames.add("" + d + "_" + testStep * k);
-                    pres.add(p);
-                    //display matches
-                    Mat display = new Mat();
-                    Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), matches, display);
-                    ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
-                }
-            }
-            //assume all false image are named as "f"+number+".png"
-            for (int i = 1; i <= Integer.MAX_VALUE; i++) {
-                File fImg = new File(filePath + "f" + i + ".png");
-                if (!fImg.exists()) break;
-                Mat qImg = ImageUtil.loadMatImage(fImg.getAbsolutePath());
+        for (int d=1; d <= 3; d++) {
+            System.out.printf("******%d*******\n",d);
+            for (int k = 1; k <= testNum; k++) {
+                ImageFeature tIF = constructTemplateFP(tIFs, k*kHStep, (d-vValue)* kVStep, 80);
+                int i = templateValue + testStep * k;
+                Mat qImg = ImageUtil.loadMatImage(filePath + "NP" + d + "_" + i + ".jpg");
                 //assume we use ORB feature points in default
                 ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
                 MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
                 float p = (float) matches.total() / tIF.getSize();
-                System.out.printf("f%d: %f\n", i, p);
-//            pw.printf("f%d: %f\n", i, (float)matches.total() / tIF.getSize());
-                if (round <= 1)
-                    fNames.add("f" + i);
+                System.out.printf("%d: %f\n", i, p);
+//            pw.printf("%d: %f\n", i, (float)matches.total() / tIF.getSize());
+                fNames.add("" + d + "_" + testStep * k);
                 pres.add(p);
-                //display matches
-                Mat display = new Mat();
-                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), matches, display);
-                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+//                    //display matches
+//                    Mat display = new Mat();
+//                    Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), matches, display);
+//                    ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
             }
+        }
+        System.out.printf("******false*******\n");
+        //assume all false image are named as "f"+number+".png"
+        for (int i = 1; i <= Integer.MAX_VALUE; i++) {
+            File fImg = new File(filePath + "f" + i + ".png");
+            if (!fImg.exists()) break;
+            ImageFeature tIF = tIFs.get(0);
+            Mat qImg = ImageUtil.loadMatImage(fImg.getAbsolutePath());
+            //assume we use ORB feature points in default
+            ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
+            MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
+            float p = (float) matches.total() / tIF.getSize();
+            System.out.printf("f%d: %f\n", i, p);
+//            pw.printf("f%d: %f\n", i, (float)matches.total() / tIF.getSize());
+            fNames.add("f" + i);
+            pres.add(p);
+//                //display matches
+//                Mat display = new Mat();
+//                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), matches, display);
+//                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
         }
         if (!append || rewriteHP) {
             pw.println(hyperParams);
@@ -544,6 +552,56 @@ public class Main {
         }
         pw.println();   //next line
         pw.close();
+    }
+
+    //assume tIFs contains only horizontal robust and vertical robust ImageFeature, at total 2.
+    static ImageFeature constructTemplateFP(List<ImageFeature> tIFs, float hd, float vd, int tNum) {
+        //calculate ratios
+        float hr = Math.abs(hd)/(Math.abs(hd) + Math.abs(vd));
+        float vr = Math.abs(vd)/(Math.abs(hd) + Math.abs(vd));
+        ImageFeature IF1;
+        ImageFeature IF2;
+        //guarantee the feature point robust on more-changed orientation is returned at first
+        if (hr >= vr) {
+            int num = (int)(hr * tNum);
+            IF1 = (num > tIFs.get(0).getSize())?tIFs.get(0) : tIFs.get(0).subImageFeature(0, num);
+            IF2 = tIFs.get(1);
+        } else {
+            int num = (int)(vr * tNum);
+            IF1 = (num > tIFs.get(1).getSize())?tIFs.get(1) : tIFs.get(1).subImageFeature(0, num);
+            IF2 = tIFs.get(0);
+        }
+        if (IF1.getSize() >= tNum) return IF1;
+        //the number of FP from the other ImageFeature
+        int num = tNum - IF1.getSize();
+        List<KeyPoint> kp = new ArrayList<>(IF1.getObjectKeypoints().toList());
+        Mat des = new Mat();//new Size(IF1.getDescriptors().cols(),tNum), IF1.getDescriptors().type());
+        des.push_back(IF1.getDescriptors());
+
+        List<KeyPoint> kp1 = IF1.getObjectKeypoints().toList();
+        List<KeyPoint> kp2 = IF2.getObjectKeypoints().toList();
+        for (int i=0; i < kp2.size(); i++) {
+            KeyPoint k = kp2.get(i);
+            boolean newFP = true;
+            for (KeyPoint k1 : kp1) {
+                if (k1.pt.x != k.pt.x || k1.pt.y != k.pt.y)
+                    continue;
+                else {
+                    newFP = false;
+                    break;
+                }
+            }
+            if (newFP) {
+                kp.add(k);
+                Mat tMat = IF2.getDescriptors().row(i);
+                des.push_back(tMat);
+            }
+            if (kp.size() >= num)
+                break;
+        }
+        MatOfKeyPoint tKP = new MatOfKeyPoint();
+        tKP.fromList(kp);
+        return new ImageFeature(tKP, des, IF1.getDescriptorType());
     }
 
     private static void testRobustFeature(String filePath, String templateImg) throws IOException {
@@ -746,4 +804,5 @@ public class Main {
         //display lighted image
         ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(ImageUtil.lightImage(img, 1.8f, 20)));
     }
+
 }
