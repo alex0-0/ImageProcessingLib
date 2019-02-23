@@ -2,7 +2,6 @@ package edu.umb.cs.imageprocessinglib.feature;
 
 import edu.umb.cs.imageprocessinglib.ImageProcessor;
 import edu.umb.cs.imageprocessinglib.model.DescriptorType;
-import javafx.util.Pair;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.DMatch;

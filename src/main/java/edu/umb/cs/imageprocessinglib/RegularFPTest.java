@@ -1,5 +1,7 @@
 package edu.umb.cs.imageprocessinglib;
 
+import edu.umb.cs.imageprocessinglib.model.BoxPosition;
+import edu.umb.cs.imageprocessinglib.model.DescriptorType;
 import edu.umb.cs.imageprocessinglib.model.ImageFeature;
 import edu.umb.cs.imageprocessinglib.model.Recognition;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
@@ -14,17 +16,24 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class RegularFPTest {
 
     public static void main(String[] args) throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        extractObjectsInDir("src/main/resources/image/multi_distortion/coffee_mate/");
-//        testRegularFP("src/main/resources/image/horse1/", "Motorcycle_s1.00.JPG");
         orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
+//        negativeTest();
+//        compareTFWithRegular("src/main/resources/image/frame/");
+//        compareTFWithRegular("src/main/resources/image/standing/");
+        tmp();
+//        testFP();
+//        mergeImagesInDir();
+//        extractObjectsInDir("src/main/resources/image/multi_distortion/coffee_mate/");
+//        testRegularFP("src/main/resources/image/horse1/", "Motorcycle_s1.00.JPG");
 //        testRegularFP("src/main/resources/image/motorcycle1/", "000.JPG");
-//        testRegularFP("src/main/resources/image/horse1/", "000.JPG");
-//        testMaxMin("src/main/resources/image/motorcycle1/", "000.JPG");
+//        testRegularFP("src/main/resources/image/single_distortion/horse1/", "000.JPG");
+//        testMaxMin("src/main/resources/image/single_distortion/motorcycle1/", "000.JPG");
 //        testMaxMin("src/main/resources/image/toy_car/", "000.png");
 //        testMaxMin("src/main/resources/image/horse1/", "000.JPG");
 //        scaleDownImage("src/main/resources/image/horse1/000.JPG");
@@ -32,6 +41,249 @@ public class RegularFPTest {
 //        for (String dir : dirNames) {
 //            scaleDownImage("src/main/resources/image/"+dir+"/0.png");
 //        }
+    }
+
+    static void tmp() throws IOException {
+        String path = "src/main/resources/image/";
+        Mat qImg = ImageUtil.loadMatImage(path+"box.png");
+        Mat tImg = ImageUtil.loadMatImage(path+"box_in_scene.png");
+        ImageFeature tIF = ImageProcessor.extractORBFeatures(tImg, 100);
+        ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 100);
+        MatOfDMatch match = ImageProcessor.matchImages(tIF, qIF);
+        List<DMatch> m = match.toList();
+        m.sort((o1, o2) -> {
+            return (int) (o1.distance - o2.distance);
+        });
+        m = m.subList(0,10);
+        match.fromList(m);
+
+        Mat display = new Mat();
+        Features2d.drawMatches(qImg, qIF.getObjectKeypoints(),tImg, tIF.getObjectKeypoints(),  match, display);
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+        System.out.printf("matching ratio: %.2f", (float)match.total()/tIF.getSize());
+    }
+
+    static void negativeTest() throws IOException {
+        int fpNum = 100;
+        String path = "src/main/resources/image/single_distortion/";
+        String[] dirNames = {"lego_man", "shoe", "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup", "furry_dog", "baby_cream", "girl_statue"};
+        File fDir = new File("src/main/resources/image/false/");
+        File[] files = fDir.listFiles((d, name) -> !name.equals(".DS_Store"));  //exclude mac hidden system file
+        System.out.printf("image\t");
+        for (int i=1; i<=files.length; i++) {
+            System.out.printf("f%d\t",i);
+        }
+        System.out.println();
+        for (String dir : dirNames) {
+           for (int i=0; i<360; i+=35) {
+               System.out.printf("%s_%d\t",dir,i);
+               Mat img = ImageUtil.loadMatImage(path+dir+"/"+i+".png");
+               ImageFeature tIF = ImageProcessor.extractORBFeatures(img, fpNum);
+
+               for (File f : files) {
+                   Mat qImg = ImageUtil.loadMatImage(f.getAbsolutePath());
+                   //assume we use ORB feature points in default
+                   ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, fpNum);
+//                   MatOfDMatch matches = ImageProcessor.matchImages(qIF, tIF);
+                   MatOfDMatch matches = ImageProcessor.BFMatchImages(qIF, tIF);
+                   float p = (float)matches.total() / tIF.getSize();
+                   System.out.printf("%.2f\t", p);
+               }
+               System.out.println();
+           }
+        }
+    }
+
+    static void compareTFWithRegular(String dirPath) throws IOException {
+        ObjectDetector objectDetector = new ObjectDetector();
+        objectDetector.init();
+        int diff = 15;  //the angle difference threshold
+        List<Float> lRatio = new ArrayList<>(); //ratios of left change
+        List<Float> rRatio = new ArrayList<>(); //ratios of right change
+        List<Float> olRatio = new ArrayList<>(); //ratios of original
+        List<Float> orRatio = new ArrayList<>(); //ratios of original
+
+        for (int i=0; i <= 360-diff; i+=5) {
+//        for (int i=0; i <= 260-diff; i+=5) {
+            String lName = dirPath+String.format("%03d.jpg",i);
+            List<Recognition> lr = objectDetector.recognizeImage(lName);
+            //only consider the case of multiple recognized objects
+            if (lr.size() >= 1) {
+                Mat img = ImageUtil.loadMatImage(lName);
+                List<ImageFeature> ifs = lr.stream().map(r->{return ImageProcessor.extractORBFeatures(r.cropPixels(img), 100);}).collect(Collectors.toList());
+                for (int d=5; d<=diff; d+=5) {
+                    String tName = String.format("%03d.jpg",i+d);
+                    List<Recognition> rs = objectDetector.recognizeImage(dirPath+tName);
+                    if (rs.size() >= 1) {
+                        Mat t = ImageUtil.loadMatImage(dirPath+tName);
+                        int count = 0;  //count how many object matching happen
+                        float sumRatio = 0;
+                        for (Recognition r : rs) {
+                            ImageFeature tmpIF = ImageProcessor.extractORBFeatures(r.cropPixels(t),100);
+                            float max = 0;
+                            for (int k=0; k < lr.size(); k++) {
+                                //if there are multiple object recognized as same title, take the one with highest matching ratio
+                                if (r.getTitle().equals(lr.get(k).getTitle())) {
+                                    MatOfDMatch m = ImageProcessor.matchWithDistanceThreshold(tmpIF,ifs.get(k),300);
+                                    float ratio = (float)m.total()/ifs.get(k).getSize();
+                                    if (ratio > max) max = ratio;
+                                }
+                            }
+                            if (max > 0) {
+                                count++;
+                                sumRatio += max;
+                            }
+                        }
+                        if (count > 0) {
+                            //calculate matching ratio of directly matching images
+                            ImageFeature oIF = ImageProcessor.extractORBFeatures(img, 100*count);
+                            olRatio.add((float)(ImageProcessor.matchWithDistanceThreshold(ImageProcessor.extractORBFeatures(t,100*count), oIF, 300).total())/oIF.getSize());
+                            lRatio.add(sumRatio/count);
+                        }
+                    }
+                }
+            }
+            String rName = dirPath+String.format("%03d.jpg",360-i);
+//            String rName = dirPath+String.format("%03d.jpg",260-i);
+            List<Recognition> rr = objectDetector.recognizeImage(rName);
+            //only consider the case of multiple recognized objects
+            if (rr.size() >= 1) {
+                Mat img = ImageUtil.loadMatImage(rName);
+                List<ImageFeature> ifs = rr.stream().map(r->{return ImageProcessor.extractORBFeatures(r.cropPixels(img), 100);}).collect(Collectors.toList());
+                for (int d=5; d<=diff; d+=5) {
+                    String tName = String.format("%03d.jpg", 360 - (i + d));
+//                    String tName = String.format("%03d.jpg", 260 - (i + d));
+                    List<Recognition> rs = objectDetector.recognizeImage(dirPath + tName);
+                    if (rs.size() >= 1) {
+                        Mat t = ImageUtil.loadMatImage(dirPath + tName);
+                        int count = 0;  //count how many object matching happen
+                        float sumRatio = 0;
+                        for (Recognition r : rs) {
+                            ImageFeature tmpIF = ImageProcessor.extractORBFeatures(r.cropPixels(t), 100);
+                            float max = 0;
+                            for (int k = 0; k < rr.size(); k++) {
+                                //if there are multiple object recognized as same title, take the one with highest matching ratio
+                                if (r.getTitle().equals(rr.get(k).getTitle())) {
+                                    MatOfDMatch m = ImageProcessor.matchWithDistanceThreshold(tmpIF, ifs.get(k), 300);
+                                    float ratio = (float)m.total() / ifs.get(k).getSize();
+                                    if (ratio > max) max = ratio;
+                                }
+                            }
+                            if (max > 0) {
+                                count++;
+                                sumRatio += max;
+                            }
+                        }
+                        if (count > 0) {
+                            //calculate matching ratio of directly matching images
+                            ImageFeature oIF = ImageProcessor.extractORBFeatures(img, 100 * count);
+                            orRatio.add((float)(ImageProcessor.matchWithDistanceThreshold(ImageProcessor.extractORBFeatures(t,100*count), oIF, 300).total())/oIF.getSize());
+                            rRatio.add(sumRatio / count);
+                        }
+                    }
+                }
+            }
+        }
+        double a_l = lRatio.stream().mapToDouble(Float::doubleValue).sum()/lRatio.size();
+        double a_r = rRatio.stream().mapToDouble(Float::doubleValue).sum()/rRatio.size();
+        double l = olRatio.stream().mapToDouble(Float::doubleValue).sum()/olRatio.size();
+        double r = orRatio.stream().mapToDouble(Float::doubleValue).sum()/orRatio.size();
+        System.out.printf("*******Average*******\nleft tf: %.2f\nright tf: %.2f\nleft ori: %.2f\nright ori: %.2f\n", a_l, a_r, l, r);
+        System.out.printf("tf left:\n%s\n", lRatio);
+        System.out.printf("tf right:\n%s\n", rRatio);
+        System.out.printf("ori left:\n%s\n", olRatio);
+        System.out.printf("ori right:\n%s\n", orRatio);
+//        System.out.printf("Angle\t");
+//        for (int i=5; i<=diff; i+=5) {
+//            System.out.printf("%d\t",i);
+//        }
+//        System.out.println();
+//        for (int i=0; i<=rRatio.size(); i++) {
+////            System.out.printf();
+//        }
+    }
+
+    static void testFP() throws IOException {
+//        String[] dirNames = {"lego_man", "shoe", "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup", "furry_dog", "baby_cream", "girl_statue"};
+        String[] dirNames = {"girl_statue"};
+        int tValue = 0;
+        int tNum = 8;
+        List<Float> ratios = new ArrayList<>();
+//        int index = 0;
+        //when change tValue, remember to change matching ratio calculation below
+//        for (int tValue=0; tValue <= 45; tValue+=5)
+            for (String dir : dirNames) {
+                String path = "src/main/resources/image/single_distortion/"+dir+"/";
+                Mat tImg = ImageUtil.loadMatImage(path+tValue+".png");
+                ImageFeature tIF = ImageProcessor.extractORBFeatures(tImg, 100);
+//            List<Mat> dImg = ImageProcessor.changeToLeftPerspective(tImg, 5, 10);
+//            ImageFeature tIF = ImageProcessor.extractRobustFeatures(tImg, dImg, 100, 300, DescriptorType.ORB);
+//            ImageFeature tIF = ImageProcessor.extractORBFeatures(tImg, 500);
+//            tIF = pickNRandomFP(tImg, tIF, 100);
+//                for (int i=1; i <= tNum; i++) {
+                List<Mat> mats = new ArrayList<>();
+                for (int i=2; i <= tNum; i+=5) {
+                    if (ratios.size()<i)
+                        ratios.add(0f);
+                    int value = tValue + i*5;
+                    Mat qImg = ImageUtil.loadMatImage(path+value+".png");
+                    ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 500);
+//                    MatOfDMatch m = ImageProcessor.matchWithDistanceThreshold(qIF, tIF, 300);
+//                    MatOfDMatch m = ImageProcessor.matchImages(qIF, tIF);
+//                    MatOfDMatch m = ImageProcessor.matchWithRegression(qIF, tIF, 5, 300, 20);
+//                    ratios.set(i-1, ratios.get(i-1) + (float)m.total() / tIF.getSize());
+
+//                Mat display = new Mat();
+//                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), m, display);
+//                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+                    List<MatOfDMatch> tm = Arrays.asList(ImageProcessor.matchWithDistanceThreshold(qIF, tIF, 300),
+                            ImageProcessor.matchImages(qIF, tIF),
+                            ImageProcessor.matchWithRegression(qIF, tIF, 5, 300, 20));
+                    List<Mat> ttt = tm.stream().map(m->{
+                        Mat d = new Mat();
+                        Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), m, d);
+                        return d;
+                    }).collect(Collectors.toList());
+                    Mat t = new Mat();
+                    Core.vconcat(ttt, t);
+                    mats.add(t);
+                }
+
+//                for (int i=1; i<=3; i++) {
+                for (int i=1; i<=1; i++) {
+                    if (ratios.size()<i+tNum)
+                        ratios.add(0f);
+                    Mat qImg = ImageUtil.loadMatImage(path+"f"+i+".png");
+                    ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 500);
+//                    MatOfDMatch m = ImageProcessor.matchWithDistanceThreshold(qIF, tIF, 300);
+//                    MatOfDMatch m = ImageProcessor.matchImages(qIF, tIF);
+//                    MatOfDMatch m = ImageProcessor.matchWithRegression(qIF, tIF, 5, 100, 10);
+//                    ratios.set(i+tNum-1, ratios.get(i+tNum-1) + (float)m.total() / tIF.getSize());
+//                    Mat display = new Mat();
+//                    Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), m, display);
+//                    ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+                    List<MatOfDMatch> tm = Arrays.asList(ImageProcessor.matchWithDistanceThreshold(qIF, tIF, 300),
+                            ImageProcessor.matchImages(qIF, tIF),
+                            ImageProcessor.matchWithRegression(qIF, tIF, 5, 300, 20));
+                    List<Mat> ttt = tm.stream().map(m->{
+                        Mat d = new Mat();
+                        Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), m, d);
+                        return d;
+                    }).collect(Collectors.toList());
+                    Mat t = new Mat();
+                    Core.vconcat(ttt, t);
+                    mats.add(t);
+                }
+//                index++;
+//                final int k = index;
+//                ratios.stream().forEach(f->System.out.printf("%.2f\t", f/k));
+//                System.out.println();
+                Mat t = new Mat();
+                Core.hconcat(mats, t);
+                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(t));
+            }
+        ratios.stream().forEach(f->System.out.printf("%.2f\t", f/dirNames.length));
+        System.out.println();
     }
 
     static void testRegularFP(String filePath, String templateImg) throws IOException {
@@ -76,15 +328,15 @@ public class RegularFPTest {
                 //display matches
                 Mat display = new Mat();
 //                    Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), m, display);
-                Features2d.drawMatches(qImg, rQIF.getObjectKeypoints(), tImg, rTIF.getObjectKeypoints(), m, display);
-                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+//                Features2d.drawMatches(qImg, rQIF.getObjectKeypoints(), tImg, rTIF.getObjectKeypoints(), m, display);
+//                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
 
-                System.out.print("| ");
-                for (int i = 0; i < mL.size(); i++) {
-                    System.out.printf("%d ", mL.get(i).trainIdx);
+//                System.out.print("| ");
+//                for (int i = 0; i < mL.size(); i++) {
+//                    System.out.printf("%d ", mL.get(i).trainIdx);
 //                    System.out.printf("%d\t", mL.get(i).trainIdx);
 //                    if ((i+1)%20==0) System.out.println();
-                }
+//                }
 //                System.out.println("\n---------");
                 System.out.println("\n|-");
             }
@@ -105,6 +357,50 @@ public class RegularFPTest {
         ImageUtil.saveImage(ImageUtil.Mat2BufferedImage(img), dirPath + "/100.png");
     }
 
+    static void mergeImagesInDir() throws IOException {
+        String filePath = "src/main/resources/image/single_distortion/";
+        String[] dirNames = {"lego_man", "shoe", "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup", "baby_cream"};
+        List<Mat> images = new ArrayList<>();
+        for (String dir : dirNames) {
+            images.add(ImageUtil.BufferedImage2Mat(ImageUtil.loadImage(filePath+dir+"/0.png")));
+        }
+        Mat aImg = new Mat();
+        Core.hconcat(images, aImg);
+//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(aImg));
+
+        String dir = "shoe/";
+        images = new ArrayList<>();
+        for (int i=0; i < 40; i+=5) {
+            images.add(ImageUtil.BufferedImage2Mat(ImageUtil.loadImage(filePath+dir+i+".png")));
+        }
+        Mat bImg = new Mat();
+        Core.hconcat(images, bImg);
+//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(bImg));
+
+        images = ImageProcessor.changeToLeftPerspective(ImageUtil.BufferedImage2Mat(ImageUtil.loadImage(filePath+dir+"0.png")),15, 8);
+        Mat cImg = new Mat();
+        Core.hconcat(images, cImg);
+//        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(cImg));
+
+        images = Arrays.asList(aImg, bImg, cImg);
+        Mat dImg = new Mat();
+        Core.vconcat(images, dImg);
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(dImg));
+        ImageUtil.saveImage(ImageUtil.Mat2BufferedImage(dImg), "display.png");
+//        File dir = new File(filePath);
+//        File[] directoryListing = dir.listFiles();
+//        if (directoryListing != null) {
+//            List<Mat> list = new ArrayList<>();
+//            for (File f : directoryListing) {
+//                if (f.isFile()) {
+//                    list.add(ImageUtil.BufferedImage2Mat(ImageUtil.loadImage(f.getPath())));
+//                }
+//            }
+//            Mat cImg = new Mat();
+//            Core.vconcat(list, cImg);
+//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(cImg));
+//        }
+    }
     static void extractObjectsInDir(String filePath) throws IOException {
         ObjectDetector objectDetector = new ObjectDetector();
         objectDetector.init();
@@ -113,16 +409,19 @@ public class RegularFPTest {
         if (directoryListing != null) {
             for (File f : directoryListing) {
                 if (f.isFile()) {
-                    BufferedImage image = ImageIO.read(f);
-                    List<Recognition> recognitions = objectDetector.recognizeImage(image);
+                    Mat img = ImageUtil.loadMatImage(f.getAbsolutePath());
+//                    BufferedImage image = ImageIO.read(f);
+                    Rect rect = new Rect(img.cols()/4, img.rows()/5, img.cols()/2, img.rows()/4*3);
+                    Mat image = new Mat(img, rect);
+                    List<Recognition> recognitions = objectDetector.recognizeImage(ImageUtil.Mat2BufferedImage(image));
                     int i = 0;
                     for (Recognition recognition : recognitions) {
                         System.out.printf("%s, Object: %s - confidence: %f box: %s\n", f.getName(),
                                 recognition.getTitle(), recognition.getConfidence(), recognition.getLocation());
 //                        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(recognition.cropPixels(ImageUtil.BufferedImage2Mat(image))));
-                        ImageUtil.saveImage(ImageUtil.Mat2BufferedImage(recognition.cropPixels(ImageUtil.BufferedImage2Mat(image))), f.getAbsolutePath());
+//                        ImageUtil.saveImage(ImageUtil.Mat2BufferedImage(recognition.cropPixels(ImageUtil.BufferedImage2Mat(image))), f.getAbsolutePath());
                         //the recognition list is sorted by the confidence, so only extract the first recognition
-                        break;
+//                        break;
 
 //                        StorageUtil.saveRecognitionToFile(recognition, "test" + (++i));
                     }
@@ -165,47 +464,56 @@ public class RegularFPTest {
 //            String fileName = filePath + String.format("%03d.png", i);
             testImages.add(ImageUtil.BufferedImage2Mat(ImageIO.read(new File(fileName))));
         }
-        List<List<Integer>> fpTrack = analyzeFPsInImages(tIF, testImages);
-        List<Integer> sizes = fpTrack.stream().map(o->o.size()).collect(Collectors.toList());
-        int num = 100;
-        for (int i : sizes) {
-           if (i < num)
-               num = i/10*10;
-        }
-        Pair<Integer, List<Integer>> candidates = maxMin(fpTrack, num);
-        System.out.printf("original template num: %d, min: %d, %d candidates:%s\n",tIF.getSize(), candidates.getKey(), candidates.getValue().size(), candidates.getValue());
+        List<Integer> minTracker = new ArrayList<>();
+        ImageFeature tmpIF = ImageProcessor.extractRobustFeatures(tImg, testImages, 100, 350, DescriptorType.ORB, minTracker);
 
-        List<KeyPoint> tKP = tIF.getObjectKeypoints().toList();
-        List<KeyPoint> kps = new ArrayList<>();
-        for (int i : candidates.getValue()) {
-            kps.add(tKP.get(i));
-        }
-        Mat des = new Mat();
-        MatOfKeyPoint matOfKeyPoint = new MatOfKeyPoint();
-        matOfKeyPoint.fromList(kps);
-        orb.compute(tImg, matOfKeyPoint, des);
-        ImageFeature imageFeature = new ImageFeature(matOfKeyPoint, des);
-
-//        for (Mat qImg : testImages) {
-        File dir = new File(filePath); File[] directoryListing = dir.listFiles();
-        if (directoryListing != null) {
-            List<File> files = new ArrayList<>(Arrays.asList(directoryListing));
-            files.sort(Comparator.comparing(File::getName));
-            for (File f : files) {
-                if (f.getName().equals(templateImg))
-                    continue;
-                Mat qImg = ImageUtil.BufferedImage2Mat(ImageIO.read(f));
-                ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 500);
-                List<DMatch> matches = matchImage(qIF, imageFeature);
-                MatOfDMatch m = new MatOfDMatch();
-                m.fromList(matches);
-//            System.out.printf("%f\n", (float) matches.size() / imageFeature.getSize());
-                System.out.printf("%s: %f\n", f.getName(), (float) matches.size() / imageFeature.getSize());
-                Mat display = new Mat();
-                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, imageFeature.getObjectKeypoints(), m, display);
-                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
-            }
-        }
+        System.out.printf("number of template robust FP: %d\n", tIF.getSize());
+        //calculate min precision
+        List<Float> minRatioTracker = IntStream.range(0, minTracker.size()).mapToObj(i->{
+            return (float)minTracker.get(i)/(i+1);
+        }).collect(Collectors.toList());
+        System.out.printf("min num:\t%s\nmin precision:\t%s\n", minTracker, minRatioTracker);
+//        List<List<Integer>> fpTrack = analyzeFPsInImages(tIF, testImages);
+//        List<Integer> sizes = fpTrack.stream().map(o->o.size()).collect(Collectors.toList());
+//        int num = 100;
+//        for (int i : sizes) {
+//           if (i < num)
+//               num = i/10*10;
+//        }
+//        Pair<Integer, List<Integer>> candidates = maxMin(fpTrack, num);
+//        System.out.printf("original template num: %d, min: %d, %d candidates:%s\n",tIF.getSize(), candidates.getKey(), candidates.getValue().size(), candidates.getValue());
+//
+//        List<KeyPoint> tKP = tIF.getObjectKeypoints().toList();
+//        List<KeyPoint> kps = new ArrayList<>();
+//        for (int i : candidates.getValue()) {
+//            kps.add(tKP.get(i));
+//        }
+//        Mat des = new Mat();
+//        MatOfKeyPoint matOfKeyPoint = new MatOfKeyPoint();
+//        matOfKeyPoint.fromList(kps);
+//        orb.compute(tImg, matOfKeyPoint, des);
+//        ImageFeature imageFeature = new ImageFeature(matOfKeyPoint, des);
+//
+////        for (Mat qImg : testImages) {
+//        File dir = new File(filePath); File[] directoryListing = dir.listFiles();
+//        if (directoryListing != null) {
+//            List<File> files = new ArrayList<>(Arrays.asList(directoryListing));
+//            files.sort(Comparator.comparing(File::getName));
+//            for (File f : files) {
+//                if (f.getName().equals(templateImg))
+//                    continue;
+//                Mat qImg = ImageUtil.BufferedImage2Mat(ImageIO.read(f));
+//                ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, 500);
+//                List<DMatch> matches = matchImage(qIF, imageFeature);
+//                MatOfDMatch m = new MatOfDMatch();
+//                m.fromList(matches);
+////            System.out.printf("%f\n", (float) matches.size() / imageFeature.getSize());
+//                System.out.printf("%s: %f\n", f.getName(), (float) matches.size() / imageFeature.getSize());
+////                Mat display = new Mat();
+////                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, imageFeature.getObjectKeypoints(), m, display);
+////                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+//            }
+//        }
     }
 
     /**
