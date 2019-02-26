@@ -231,13 +231,12 @@ public class ImageProcessor {
         return FeatureMatcher.getInstance().BFMatchFeature(qIF.getDescriptors(), tIF.getDescriptors(), qIF.getDescriptorType());
     }
 
-     static public KeyPoint findKeyPoint(ImageFeature templateF, int idx){
-        return findKeyPoint(templateF.getObjectKeypoints(),idx);
-    }
-
-    static public KeyPoint findKeyPoint(MatOfKeyPoint mkp, int idx){
-        KeyPoint[] kps=mkp.toArray();
-        return kps[idx];
+    static public MatOfDMatch BFMatchWithCrossCheck(ImageFeature qIF, ImageFeature tIF) {
+        if (qIF.getDescriptorType() != tIF.getDescriptorType()) {
+            System.out.print("Can't match different feature descriptor types");
+            return null;
+        }
+        return FeatureMatcher.getInstance().BFMatchWithCrossCheck(qIF.getDescriptors(), tIF.getDescriptors(), qIF.getDescriptorType());
     }
 
     static public MatOfDMatch matchWithRegression(ImageFeature qIF, ImageFeature tIF, int knnNum, float matchDisThd, int posThd) {
@@ -252,9 +251,16 @@ public class ImageProcessor {
     static public MatOfDMatch matchWithRegression(ImageFeature qIF, ImageFeature tIF) {
         return matchWithRegression(qIF, tIF, 5, 300, 20);
     }
+    static public MatOfDMatch matchWithDistanceThreshold(ImageFeature qIF, ImageFeature tIF, int disThd) {
+        return matchWithDistanceThreshold(qIF, tIF, disThd, false);
+    }
 
-    static MatOfDMatch matchWithDistanceThreshold(ImageFeature qIF, ImageFeature tIF, int disThd) {
-        MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
+    static public MatOfDMatch matchWithDistanceThreshold(ImageFeature qIF, ImageFeature tIF, int disThd, boolean crossCheck) {
+        MatOfDMatch m;
+        if (crossCheck)
+            m = FeatureMatcher.getInstance().BFMatchWithCrossCheck(qIF.getDescriptors(), tIF.getDescriptors(), qIF.getDescriptorType());
+        else
+            m = ImageProcessor.BFMatchImages(qIF, tIF);
 //                MatOfDMatch m = ImageProcessor.BFMatchImages(qIF, tIF);
 //                MatOfDMatch m = ImageProcessor.matchImages(qIF, tIF);
 //                MatOfDMatch m = ImageProcessor.matchWithRegression(qIF, tIF);

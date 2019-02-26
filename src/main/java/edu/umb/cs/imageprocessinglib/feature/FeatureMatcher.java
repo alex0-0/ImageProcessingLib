@@ -82,9 +82,22 @@ public class FeatureMatcher {
         return matches;
     }
 
-    public MatOfDMatch matchFeature(Mat queryDescriptor, Mat templateDescriptor, MatOfKeyPoint queryKeyPoints, MatOfKeyPoint templateKeyPoints) {
-        return matchFeature(queryDescriptor, templateDescriptor, queryKeyPoints, templateKeyPoints, descriptorType);
+    public MatOfDMatch BFMatchWithCrossCheck(Mat queryDescriptor, Mat templateDescriptor, DescriptorType dType) {
+        BFMatcher m;
+        switch (dType) {
+            case SURF:
+                m = BFMatcher.create(DescriptorMatcher.BRUTEFORCE, true);
+                break;
+            case ORB:
+            default:
+                m = BFMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING, true);
+                break;
+        }
+        MatOfDMatch matches = new MatOfDMatch();
+        m.match(queryDescriptor, templateDescriptor, matches);
+        return matches;
     }
+
     /**
      *
      * @param queryDescriptor

@@ -5,6 +5,7 @@ import edu.umb.cs.imageprocessinglib.model.DescriptorType;
 import edu.umb.cs.imageprocessinglib.model.ImageFeature;
 import edu.umb.cs.imageprocessinglib.model.Recognition;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
+import javafx.beans.binding.IntegerBinding;
 import javafx.util.Pair;
 import org.opencv.core.*;
 import org.opencv.features2d.Features2d;
@@ -23,10 +24,11 @@ public class RegularFPTest {
     public static void main(String[] args) throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
-//        negativeTest();
+//        positiveTest();
+        negativeTest();
 //        compareTFWithRegular("src/main/resources/image/frame/");
 //        compareTFWithRegular("src/main/resources/image/standing/");
-        tmp();
+//        tmp();
 //        testFP();
 //        mergeImagesInDir();
 //        extractObjectsInDir("src/main/resources/image/multi_distortion/coffee_mate/");
@@ -63,34 +65,90 @@ public class RegularFPTest {
         System.out.printf("matching ratio: %.2f", (float)match.total()/tIF.getSize());
     }
 
+    static void positiveTest() throws IOException {
+        int fpNum = 100;
+        int diff = 15;
+        String path = "src/main/resources/image/single_distortion/";
+        String[] dirNames = {"lego_man", "shoe", "furry_elephant", "furry_bear", "girl_statue"};
+        System.out.printf("image\t");
+        List<Integer> ns = new ArrayList<>();
+        for (int i=0; i<360; i+=5) {
+            System.out.printf("%d\t",i);
+            ns.add(i);
+        }
+        System.out.println();
+        for (String dir : dirNames) {
+            //load all images and extract features first
+            List<Mat> imgs = ns.stream().map(n -> {return ImageUtil.loadMatImage(new File(path+dir+"/"+n+".png").getAbsolutePath());}).collect(Collectors.toList());
+            List<ImageFeature> ifs = imgs.stream().map(i->{return ImageProcessor.extractORBFeatures(i, fpNum);}).collect(Collectors.toList());
+
+            //test angle view difference from 5 to 15 degrees
+            for (int i=5; i<=diff; i+=5) {
+                System.out.printf("%s_%d\t",dir,i);
+
+                //use images of different view angles as template image
+                for (int d=0; d<360; d+=5) {
+                    //assume we use ORB feature points in default
+                    ImageFeature tIF = ifs.get(d/5);
+                    ImageFeature qIF = ifs.get((d+i)%360/5);
+//                   MatOfDMatch matches = ImageProcessor.matchImages(qIF, tIF);
+//                   MatOfDMatch matches = ImageProcessor.BFMatchImages(qIF, tIF);
+                    MatOfDMatch matches = ImageProcessor.BFMatchWithCrossCheck(qIF, tIF);
+                    float p = (float)matches.total() / tIF.getSize();
+                    System.out.printf("%.2f\t", p);
+                }
+                System.out.println();
+            }
+
+            //test angle view difference from -5 to -15 degrees
+            for (int i=-5; i>=-diff; i-=5) {
+                System.out.printf("%s_%d\t",dir,i);
+
+                for (int d=0; d<360; d+=5) {
+                    //assume we use ORB feature points in default
+                    ImageFeature tIF = ifs.get(d/5);
+                    ImageFeature qIF = ifs.get((d+i+360)%360/5);
+//                   MatOfDMatch matches = ImageProcessor.matchImages(qIF, tIF);
+//                   MatOfDMatch matches = ImageProcessor.BFMatchImages(qIF, tIF);
+                    MatOfDMatch matches = ImageProcessor.BFMatchWithCrossCheck(qIF, tIF);
+                    float p = (float)matches.total() / tIF.getSize();
+                    System.out.printf("%.2f\t", p);
+                }
+                System.out.println();
+            }
+        }
+    }
+
+    //compare image to false images downloaded from google
     static void negativeTest() throws IOException {
         int fpNum = 100;
         String path = "src/main/resources/image/single_distortion/";
-        String[] dirNames = {"lego_man", "shoe", "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup", "furry_dog", "baby_cream", "girl_statue"};
-        File fDir = new File("src/main/resources/image/false/");
-        File[] files = fDir.listFiles((d, name) -> !name.equals(".DS_Store"));  //exclude mac hidden system file
+        String[] dirNames = {"lego_man", "shoe", "furry_elephant", "furry_bear", "girl_statue"};
         System.out.printf("image\t");
-        for (int i=1; i<=files.length; i++) {
+        for (int i=1; i<=100; i++) {
             System.out.printf("f%d\t",i);
         }
         System.out.println();
         for (String dir : dirNames) {
-           for (int i=0; i<360; i+=35) {
-               System.out.printf("%s_%d\t",dir,i);
-               Mat img = ImageUtil.loadMatImage(path+dir+"/"+i+".png");
-               ImageFeature tIF = ImageProcessor.extractORBFeatures(img, fpNum);
+            File fDir = new File(path+dir+"/false/");
+            File[] files = fDir.listFiles((d, name) -> !name.equals(".DS_Store"));  //exclude mac hidden system file
+            for (int i=0; i<360; i+=35) {
+                System.out.printf("%s_%d\t",dir,i);
+                Mat img = ImageUtil.loadMatImage(path+dir+"/"+i+".png");
+                ImageFeature tIF = ImageProcessor.extractORBFeatures(img, fpNum);
 
-               for (File f : files) {
-                   Mat qImg = ImageUtil.loadMatImage(f.getAbsolutePath());
-                   //assume we use ORB feature points in default
-                   ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, fpNum);
+                for (File f : files) {
+                    Mat qImg = ImageUtil.loadMatImage(f.getAbsolutePath());
+                    //assume we use ORB feature points in default
+                    ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, fpNum);
 //                   MatOfDMatch matches = ImageProcessor.matchImages(qIF, tIF);
-                   MatOfDMatch matches = ImageProcessor.BFMatchImages(qIF, tIF);
-                   float p = (float)matches.total() / tIF.getSize();
-                   System.out.printf("%.2f\t", p);
-               }
-               System.out.println();
-           }
+//                   MatOfDMatch matches = ImageProcessor.BFMatchImages(qIF, tIF);
+                    MatOfDMatch matches = ImageProcessor.BFMatchWithCrossCheck(qIF, tIF);
+                    float p = (float)matches.total() / tIF.getSize();
+                    System.out.printf("%.2f\t", p);
+                }
+                System.out.println();
+            }
         }
     }
 
