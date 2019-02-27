@@ -26,6 +26,8 @@ public class RegularFPTest {
         orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
 //        positiveTest();
         negativeTest();
+//        compareTFWithRegular("src/main/resources/image/street_car/");
+//        compareTFWithRegular("src/main/resources/image/indoor/");
 //        compareTFWithRegular("src/main/resources/image/frame/");
 //        compareTFWithRegular("src/main/resources/image/standing/");
 //        tmp();
@@ -155,34 +157,64 @@ public class RegularFPTest {
     static void compareTFWithRegular(String dirPath) throws IOException {
         ObjectDetector objectDetector = new ObjectDetector();
         objectDetector.init();
-        int diff = 15;  //the angle difference threshold
+        int diff = 5;  //the angle difference threshold
         List<Float> lRatio = new ArrayList<>(); //ratios of left change
         List<Float> rRatio = new ArrayList<>(); //ratios of right change
         List<Float> olRatio = new ArrayList<>(); //ratios of original
         List<Float> orRatio = new ArrayList<>(); //ratios of original
+        int num = 58;   //the number of images inside the directory
+//        int num = 6;
 
-        for (int i=0; i <= 360-diff; i+=5) {
+        List<Integer> ns = new ArrayList<>();
+        for (int i=1; i<=num; i+=1) {
+            ns.add(i);
+        }
+
+        //load all images and do their recognition, calculate image feature points
+        List<Mat> mats = ns.stream().map(n -> {return ImageUtil.loadMatImage(new File(dirPath+n+".png").getAbsolutePath());}).collect(Collectors.toList());
+        List<BufferedImage> imgs = ns.stream().map(n -> {return ImageUtil.loadImage(new File(dirPath+n+".png").getAbsolutePath());}).collect(Collectors.toList());
+        List<List<Recognition>> rgs = imgs.stream().map(i->{return objectDetector.recognizeImage(i);}).collect(Collectors.toList());
+        List<List<ImageFeature>> ifsList = new ArrayList<>();
+        for (int i=0; i < rgs.size(); i++) {
+            List<Recognition> rg = rgs.get(i);
+            Mat img = mats.get(i);
+            List<ImageFeature>  ifs = rg.stream().map(r->{return ImageProcessor.extractORBFeatures(r.cropPixels(img,r.getModelSize()),100);}).collect(Collectors.toList());
+            ifsList.add(ifs);
+        }
+
+        for (int i=1; i <= num-diff; i+=1) {
+//        for (int i=0; i <= 360-diff; i+=5) {
 //        for (int i=0; i <= 260-diff; i+=5) {
-            String lName = dirPath+String.format("%03d.jpg",i);
-            List<Recognition> lr = objectDetector.recognizeImage(lName);
+            List<Recognition> lr = rgs.get(i-1);
             //only consider the case of multiple recognized objects
             if (lr.size() >= 1) {
-                Mat img = ImageUtil.loadMatImage(lName);
-                List<ImageFeature> ifs = lr.stream().map(r->{return ImageProcessor.extractORBFeatures(r.cropPixels(img), 100);}).collect(Collectors.toList());
-                for (int d=5; d<=diff; d+=5) {
-                    String tName = String.format("%03d.jpg",i+d);
-                    List<Recognition> rs = objectDetector.recognizeImage(dirPath+tName);
+                //get template image and corresponding recognized part's feature point list, one ImageFeature for one recognized object
+                Mat img = mats.get(i-1);
+                List<ImageFeature> ifs = ifsList.get(i-1);
+//                for (int d=5; d<=diff; d+=5) {
+                for (int d=1; d<=diff; d+=1) {
+//                    String tName = String.format("%03d.jpg",i+d);
+                    //get query images' TF recognition
+                    List<Recognition> rs = rgs.get(i+d-1);
                     if (rs.size() >= 1) {
-                        Mat t = ImageUtil.loadMatImage(dirPath+tName);
+                        Mat t = mats.get(i+d-1);
                         int count = 0;  //count how many object matching happen
                         float sumRatio = 0;
-                        for (Recognition r : rs) {
-                            ImageFeature tmpIF = ImageProcessor.extractORBFeatures(r.cropPixels(t),100);
+                        for (int index=0; index < rs.size(); index++) {
+                            Recognition r = rs.get(index);
+                            //get query image recognized part's feature point
+                            ImageFeature tmpIF = ifsList.get(i+d-1).get(index);
                             float max = 0;
                             for (int k=0; k < lr.size(); k++) {
                                 //if there are multiple object recognized as same title, take the one with highest matching ratio
                                 if (r.getTitle().equals(lr.get(k).getTitle())) {
-                                    MatOfDMatch m = ImageProcessor.matchWithDistanceThreshold(tmpIF,ifs.get(k),300);
+                                    if (ifs.get(k).getSize()<=0)
+                                        continue;
+//                                    MatOfDMatch m = ImageProcessor.matchWithDistanceThreshold(tmpIF,ifs.get(k),300);
+                                    MatOfDMatch m = ImageProcessor.BFMatchWithCrossCheck(tmpIF,ifs.get(k));
+//                                    MatOfDMatch m = ImageProcessor.matchImages(tmpIF,ifs.get(k));
+//                                    MatOfDMatch m = ImageProcessor.matchWithRegression(tmpIF,ifs.get(k));
+//                                    MatOfDMatch m = ImageProcessor.matchWithDistanceThreshold(tmpIF,ifs.get(k),300, true);
                                     float ratio = (float)m.total()/ifs.get(k).getSize();
                                     if (ratio > max) max = ratio;
                                 }
@@ -195,34 +227,52 @@ public class RegularFPTest {
                         if (count > 0) {
                             //calculate matching ratio of directly matching images
                             ImageFeature oIF = ImageProcessor.extractORBFeatures(img, 100*count);
-                            olRatio.add((float)(ImageProcessor.matchWithDistanceThreshold(ImageProcessor.extractORBFeatures(t,100*count), oIF, 300).total())/oIF.getSize());
+//                            olRatio.add((float)(ImageProcessor.matchWithDistanceThreshold(ImageProcessor.extractORBFeatures(t,100*count), oIF,300, true).total())/oIF.getSize());
+//                            olRatio.add((float)(ImageProcessor.matchImages(ImageProcessor.extractORBFeatures(t,100*count), oIF).total())/oIF.getSize());
+//                            olRatio.add((float)(ImageProcessor.matchWithRegression(ImageProcessor.extractORBFeatures(t,100*count), oIF).total())/oIF.getSize());
+                            olRatio.add((float)(ImageProcessor.BFMatchWithCrossCheck(ImageProcessor.extractORBFeatures(t,100*count), oIF).total())/oIF.getSize());
+//                            olRatio.add((float)(ImageProcessor.matchWithDistanceThreshold(ImageProcessor.extractORBFeatures(t,100*count), oIF, 300).total())/oIF.getSize());
                             lRatio.add(sumRatio/count);
                         }
                     }
                 }
             }
-            String rName = dirPath+String.format("%03d.jpg",360-i);
+            //loop in reverse order
+//            String rName = dirPath+String.format("%03d.jpg",360-i);
 //            String rName = dirPath+String.format("%03d.jpg",260-i);
-            List<Recognition> rr = objectDetector.recognizeImage(rName);
+            //get template image's recognition
+            List<Recognition> rr = rgs.get(num-i);
             //only consider the case of multiple recognized objects
             if (rr.size() >= 1) {
-                Mat img = ImageUtil.loadMatImage(rName);
-                List<ImageFeature> ifs = rr.stream().map(r->{return ImageProcessor.extractORBFeatures(r.cropPixels(img), 100);}).collect(Collectors.toList());
-                for (int d=5; d<=diff; d+=5) {
-                    String tName = String.format("%03d.jpg", 360 - (i + d));
+                //get template image and corresponding recognized part's feature point list, one ImageFeature for one recognized object
+                Mat img = mats.get(num-i);
+                List<ImageFeature> ifs = ifsList.get(num-i);
+//                for (int d=5; d<=diff; d+=5) {
+                for (int d=1; d<=diff; d+=1) {
+//                    String tName = String.format("%03d.jpg", 360 - (i + d));
+//                    String tName = String.format("%d.png", num + 1 - (i + d));
 //                    String tName = String.format("%03d.jpg", 260 - (i + d));
-                    List<Recognition> rs = objectDetector.recognizeImage(dirPath + tName);
+                    //get query images' TF recognition
+                    List<Recognition> rs = rgs.get(num-(i+d));
                     if (rs.size() >= 1) {
-                        Mat t = ImageUtil.loadMatImage(dirPath + tName);
+                        Mat t = mats.get(num-(i+d));
                         int count = 0;  //count how many object matching happen
                         float sumRatio = 0;
-                        for (Recognition r : rs) {
-                            ImageFeature tmpIF = ImageProcessor.extractORBFeatures(r.cropPixels(t), 100);
+                        for (int index=0; index<rs.size(); index++) {
+                            Recognition r = rs.get(index);
+                            ImageFeature tmpIF = ifsList.get(num-(i+d)).get(index);
                             float max = 0;
                             for (int k = 0; k < rr.size(); k++) {
                                 //if there are multiple object recognized as same title, take the one with highest matching ratio
                                 if (r.getTitle().equals(rr.get(k).getTitle())) {
-                                    MatOfDMatch m = ImageProcessor.matchWithDistanceThreshold(tmpIF, ifs.get(k), 300);
+                                    if (ifs.get(k).getSize()<=0)
+                                        continue;
+//                                    MatOfDMatch m = ImageProcessor.matchWithDistanceThreshold(tmpIF, ifs.get(k), 300);
+//                                    MatOfDMatch m = ImageProcessor.matchWithDistanceThreshold(tmpIF, ifs.get(k),300, true);
+                                    MatOfDMatch m = ImageProcessor.BFMatchWithCrossCheck(tmpIF, ifs.get(k));
+//                                    MatOfDMatch m = ImageProcessor.matchImages(tmpIF, ifs.get(k));
+//                                    MatOfDMatch m = ImageProcessor.matchWithRegression(tmpIF, ifs.get(k));
+//                                    displayMatches(rr.get(k).cropPixels(img), r.cropPixels(t), ifs.get(k), tmpIF, m);
                                     float ratio = (float)m.total() / ifs.get(k).getSize();
                                     if (ratio > max) max = ratio;
                                 }
@@ -235,8 +285,15 @@ public class RegularFPTest {
                         if (count > 0) {
                             //calculate matching ratio of directly matching images
                             ImageFeature oIF = ImageProcessor.extractORBFeatures(img, 100 * count);
-                            orRatio.add((float)(ImageProcessor.matchWithDistanceThreshold(ImageProcessor.extractORBFeatures(t,100*count), oIF, 300).total())/oIF.getSize());
+//                            orRatio.add((float)(ImageProcessor.matchWithDistanceThreshold(ImageProcessor.extractORBFeatures(t,100*count), oIF, 300).total())/oIF.getSize());
+//                            orRatio.add((float)(ImageProcessor.matchWithDistanceThreshold(ImageProcessor.extractORBFeatures(t,100*count), oIF,300, true).total())/oIF.getSize());
+                            ImageFeature tIF = ImageProcessor.extractORBFeatures(t,100*count);
+                            MatOfDMatch m = ImageProcessor.BFMatchWithCrossCheck(tIF, oIF);
+//                            MatOfDMatch m = ImageProcessor.matchImages(tIF, oIF);
+//                            MatOfDMatch m = ImageProcessor.matchWithRegression(tIF, oIF);
+                            orRatio.add((float)(m.total())/oIF.getSize());
                             rRatio.add(sumRatio / count);
+//                            displayMatches(t, img, tIF, oIF, m);
                         }
                     }
                 }
@@ -259,6 +316,12 @@ public class RegularFPTest {
 //        for (int i=0; i<=rRatio.size(); i++) {
 ////            System.out.printf();
 //        }
+    }
+
+    static void displayMatches(Mat tImg, Mat qImg, ImageFeature tIF, ImageFeature qIF, MatOfDMatch m) {
+        Mat d = new Mat();
+        Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), m, d);
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(d));
     }
 
     static void testFP() throws IOException {
