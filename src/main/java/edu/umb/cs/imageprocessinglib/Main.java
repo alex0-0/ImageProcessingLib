@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Main {
+    static int DEBUG = 1;
 
     public static void main(String[] args) throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -572,8 +573,7 @@ public class Main {
             IF2 = tIFs.get(0);
         }
         if (IF1.getSize() >= tNum) return IF1;
-        //the number of FP from the other ImageFeature
-        int num = tNum - IF1.getSize();
+
         List<KeyPoint> kp = new ArrayList<>(IF1.getObjectKeypoints().toList());
         Mat des = new Mat();//new Size(IF1.getDescriptors().cols(),tNum), IF1.getDescriptors().type());
         des.push_back(IF1.getDescriptors());
@@ -596,11 +596,12 @@ public class Main {
                 Mat tMat = IF2.getDescriptors().row(i);
                 des.push_back(tMat);
             }
-            if (kp.size() >= num)
+            if (kp.size() >= tNum)
                 break;
         }
         MatOfKeyPoint tKP = new MatOfKeyPoint();
         tKP.fromList(kp);
+//        System.out.printf("construct FP size: %d", kp.size());
         return new ImageFeature(tKP, des, IF1.getDescriptorType());
     }
 

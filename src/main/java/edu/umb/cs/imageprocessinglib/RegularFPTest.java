@@ -24,8 +24,8 @@ public class RegularFPTest {
     public static void main(String[] args) throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         orb = ORB.create(500, 1.2f, 8, 15, 0, 2, ORB.HARRIS_SCORE, 31, 20);
-//        positiveTest();
-        negativeTest();
+        positiveTest();
+//        negativeTest();
 //        compareTFWithRegular("src/main/resources/image/street_car/");
 //        compareTFWithRegular("src/main/resources/image/indoor/");
 //        compareTFWithRegular("src/main/resources/image/frame/");
@@ -69,7 +69,8 @@ public class RegularFPTest {
 
     static void positiveTest() throws IOException {
         int fpNum = 100;
-        int diff = 15;
+        int diff = 30;
+        int dis_thd = 500;
         String path = "src/main/resources/image/single_distortion/";
         String[] dirNames = {"lego_man", "shoe", "furry_elephant", "furry_bear", "girl_statue"};
         System.out.printf("image\t");
@@ -96,6 +97,7 @@ public class RegularFPTest {
 //                   MatOfDMatch matches = ImageProcessor.matchImages(qIF, tIF);
 //                   MatOfDMatch matches = ImageProcessor.BFMatchImages(qIF, tIF);
                     MatOfDMatch matches = ImageProcessor.BFMatchWithCrossCheck(qIF, tIF);
+//                    MatOfDMatch matches = ImageProcessor.matchWithDistanceThreshold(qIF, tIF, dis_thd, true);
                     float p = (float)matches.total() / tIF.getSize();
                     System.out.printf("%.2f\t", p);
                 }
@@ -113,6 +115,7 @@ public class RegularFPTest {
 //                   MatOfDMatch matches = ImageProcessor.matchImages(qIF, tIF);
 //                   MatOfDMatch matches = ImageProcessor.BFMatchImages(qIF, tIF);
                     MatOfDMatch matches = ImageProcessor.BFMatchWithCrossCheck(qIF, tIF);
+//                    MatOfDMatch matches = ImageProcessor.matchWithDistanceThreshold(qIF, tIF, dis_thd, true);
                     float p = (float)matches.total() / tIF.getSize();
                     System.out.printf("%.2f\t", p);
                 }
@@ -134,18 +137,21 @@ public class RegularFPTest {
         for (String dir : dirNames) {
             File fDir = new File(path+dir+"/false/");
             File[] files = fDir.listFiles((d, name) -> !name.equals(".DS_Store"));  //exclude mac hidden system file
+            List<ImageFeature> qIFs = new ArrayList<>(Arrays.asList(files)).stream().map(
+                    file -> {return ImageProcessor.extractORBFeatures(ImageUtil.loadMatImage(file.getAbsolutePath()), fpNum);}).collect(Collectors.toList());
             for (int i=0; i<360; i+=35) {
                 System.out.printf("%s_%d\t",dir,i);
                 Mat img = ImageUtil.loadMatImage(path+dir+"/"+i+".png");
                 ImageFeature tIF = ImageProcessor.extractORBFeatures(img, fpNum);
 
-                for (File f : files) {
-                    Mat qImg = ImageUtil.loadMatImage(f.getAbsolutePath());
+                for (int d=0; d < qIFs.size(); d++) {
+//                    Mat qImg = ImageUtil.loadMatImage(f.getAbsolutePath());
                     //assume we use ORB feature points in default
-                    ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, fpNum);
+                    ImageFeature qIF = qIFs.get(d);
 //                   MatOfDMatch matches = ImageProcessor.matchImages(qIF, tIF);
 //                   MatOfDMatch matches = ImageProcessor.BFMatchImages(qIF, tIF);
                     MatOfDMatch matches = ImageProcessor.BFMatchWithCrossCheck(qIF, tIF);
+//                    MatOfDMatch matches = ImageProcessor.matchWithDistanceThreshold(qIF, tIF, 350, true);
                     float p = (float)matches.total() / tIF.getSize();
                     System.out.printf("%.2f\t", p);
                 }
