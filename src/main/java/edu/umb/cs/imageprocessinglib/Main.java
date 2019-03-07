@@ -10,14 +10,21 @@ import org.opencv.core.*;
 import org.opencv.features2d.Features2d;
 
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Main {
     static int DEBUG = 1;
+
+    static int fpnum=50;
 
     public static void main(String[] args) throws IOException {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -55,8 +62,8 @@ public class Main {
 //                0.05f, 10, 100, 300), 500, 300, 20, 8);
         testCombinedDistortion("src/main/resources/image/multi_distortion/detergent/", "NP2_0.jpg", null, true,
                 new Distortion[]{
-                        new Distortion(DistortionType.RightPers, 5f, 10, 60, 300),
-                        new Distortion(DistortionType.TopPers, 5f, 10, 60, 300)
+                        new Distortion(DistortionType.RightPers, 5f, 10, fpnum*2, 300),
+                        new Distortion(DistortionType.TopPers, 5f, 10, fpnum*2, 300)
                 },
                 500, 300, 20, 8);
 //        testRobustFeature("src/main/resources/image/single_distortion/detergent/", 1, "ttt_log", true,
@@ -494,7 +501,7 @@ public class Main {
         for (int d=1; d <= 3; d++) {
             System.out.printf("******%d*******\n",d);
             for (int k = 1; k <= testNum; k++) {
-                ImageFeature tIF = constructTemplateFP(tIFs, k*kHStep, (d-vValue)* kVStep, 80);
+                ImageFeature tIF = constructTemplateFP(tIFs, k*kHStep, (d-vValue)* kVStep, fpnum);
                 int i = templateValue + testStep * k;
                 Mat qImg = ImageUtil.loadMatImage(filePath + "NP" + d + "_" + i + ".jpg");
                 //assume we use ORB feature points in default
@@ -555,15 +562,84 @@ public class Main {
         pw.close();
     }
 
+
+    static class KPoint{
+        double x,y;
+        boolean selected =false, inFirst=false, inSecond=false;
+
+        int idx1, idx2;
+        KPoint(double x, double y){
+            this.x=x;this.y=y;
+        }
+        @Override
+        public boolean equals(Object obj) {
+            if(!(obj instanceof KPoint)) return false;
+            KPoint kobj=(KPoint) obj;
+            return ((kobj.getX()==x)&&(kobj.getY()==y));
+        }
+
+        public double getX() {
+            return x;
+        }
+
+
+        public double getY() {
+            return y;
+        }
+
+        public void setIdx1(int idx1) {
+            if(idx1>=0) {
+                setInFirst(true);
+                this.idx1 = idx1;
+            }
+        }
+
+        public void setIdx2(int idx2) {
+            if(idx2>=0) {
+                setInSecond(true);
+                this.idx2 = idx2;
+            }
+        }
+
+        public int getIdx1() {
+            return idx1;
+        }
+
+        public int getIdx2() {
+            return idx2;
+        }
+
+        public void setSelected(boolean selected){
+            this.selected=selected;
+        }
+
+        public void setInFirst(boolean inFirst) {
+            this.inFirst = inFirst;
+        }
+
+        public void setInSecond(boolean inSecond) {
+            this.inSecond = inSecond;
+        }
+
+        public boolean isSelected(){ return selected;}
+
+        public boolean isInFirst() {
+            return inFirst;
+        }
+
+        public boolean isInSecond() {
+            return inSecond;
+        }
+    }
     //assume tIFs contains only horizontal robust and vertical robust ImageFeature, at total 2.
     static ImageFeature constructTemplateFP(List<ImageFeature> tIFs, float hd, float vd, int tNum) {
         //calculate ratios
         float hr = Math.abs(hd)/(Math.abs(hd) + Math.abs(vd));
         float vr = Math.abs(vd)/(Math.abs(hd) + Math.abs(vd));
-        ImageFeature IF1;
-        ImageFeature IF2;
+        ImageFeature IF1=tIFs.get(0); //horizontal
+        ImageFeature IF2=tIFs.get(1); //vertical
         //guarantee the feature point robust on more-changed orientation is returned at first
-        if (hr >= vr) {
+        /*if (hr >= vr) {
             int num = (int)(hr * tNum);
             IF1 = (num > tIFs.get(0).getSize())?tIFs.get(0) : tIFs.get(0).subImageFeature(0, num);
             IF2 = tIFs.get(1);
@@ -572,15 +648,92 @@ public class Main {
             IF1 = (num > tIFs.get(1).getSize())?tIFs.get(1) : tIFs.get(1).subImageFeature(0, num);
             IF2 = tIFs.get(0);
         }
-        if (IF1.getSize() >= tNum) return IF1;
+        if (IF1.getSize() >= tNum) return IF1;*/
 
-        List<KeyPoint> kp = new ArrayList<>(IF1.getObjectKeypoints().toList());
+        List<KeyPoint> kp= new ArrayList<>();//(IF1.getObjectKeypoints().toList());
         Mat des = new Mat();//new Size(IF1.getDescriptors().cols(),tNum), IF1.getDescriptors().type());
-        des.push_back(IF1.getDescriptors());
+        //des.push_back(IF1.getDescriptors());
 
         List<KeyPoint> kp1 = IF1.getObjectKeypoints().toList();
         List<KeyPoint> kp2 = IF2.getObjectKeypoints().toList();
-        for (int i=0; i < kp2.size(); i++) {
+
+        List<KPoint> distKPs=new ArrayList<>();
+        for(int i=0;i<kp1.size();i++){
+            KeyPoint k1= kp1.get(i);
+            KPoint tkp=new KPoint(k1.pt.x, k1.pt.y);
+            tkp.setIdx1(i);
+            int idx=distKPs.indexOf(tkp);
+            if(idx<0){
+                for(int j=0;j<kp2.size();j++){
+                    KeyPoint k2=kp2.get(j);
+                    if((k2.pt.x==k1.pt.x)&&(k2.pt.y==k1.pt.y)){
+                        tkp.setIdx2(j);
+                        break;
+                    }
+                }
+                distKPs.add(tkp);
+            }else{
+                //System.out.println("sth is wrong");
+            }
+        }
+        System.out.printf("after if1:%d, distKps:%d\n",kp1.size(),distKPs.size());
+
+
+        for(int i=0;i<kp2.size();i++){
+            KeyPoint k2= kp2.get(i);
+            KPoint tkp=new KPoint(k2.pt.x, k2.pt.y);
+            tkp.setIdx2(i);
+            int idx=distKPs.indexOf(tkp);
+            if(idx<0){
+                distKPs.add(tkp);
+            }else{
+                //System.out.println("sth is wrong");
+            }
+        }
+        System.out.printf("after if2:%d, distKps:%d\n",kp2.size(),distKPs.size());
+
+
+        int c1=0,c2=0;//couting # of selected fps from if1 and if2
+        int p1=0,p2=0;//pointers for if1 and if2
+        ImageFeature curD; //for descriptors
+        while( kp.size()<tNum){
+            KeyPoint k;
+            float deficit1 = hr- (float)c1/tNum;
+            float deficit2 = vr-(float)c2/tNum;
+            if(deficit1>deficit2){
+                k=kp1.get(p1++);
+            }else{
+                k=kp2.get(p2++);
+            }
+            KPoint kkp=new KPoint(k.pt.x,k.pt.y);
+            int idx=distKPs.indexOf(kkp);
+            if(idx<0) System.out.println("sth is wrong, idx<0");
+            kkp=distKPs.get(idx);
+            //System.out.printf("x:%.02f\ty:%.02f\n", kkp.getX(),kkp.getY());
+            if(kkp.isSelected()){
+                //System.out.println("selected");
+                //System.out.printf("in 1:%b, in 2:%b\n",kkp.isInFirst(),kkp.isInSecond());
+                continue;
+            }
+
+            if(kkp.isInFirst()) c1++;
+            if(kkp.isInSecond()) c2++;
+            kkp.setSelected(true);
+
+            kp.add(k);
+
+            Mat tMat=null;
+            if(kkp.isInFirst()){
+                tMat = IF1.getDescriptors().row(kkp.getIdx1());
+            }else if(kkp.isInSecond()){
+                tMat = IF2.getDescriptors().row(kkp.getIdx2());
+            }else{System.out.println("sth. is wrong, not in 1 or 2");}
+            des.push_back(tMat);
+            //System.out.println(des.size().toString());
+            //System.out.printf("d1:%.02f, d2:%.02f, p1:%d,p2:%d,kp:%d\n",deficit1,deficit2,p1,p2,kp.size());
+        }
+        System.out.printf("hr:%.02f,c1:%d,c2:%d\n",hr,c1,c2);
+        /*for (int i=0; i < kp2.size(); i++) {
             KeyPoint k = kp2.get(i);
             boolean newFP = true;
             for (KeyPoint k1 : kp1) {
@@ -598,10 +751,10 @@ public class Main {
             }
             if (kp.size() >= tNum)
                 break;
-        }
+        }*/
         MatOfKeyPoint tKP = new MatOfKeyPoint();
         tKP.fromList(kp);
-//        System.out.printf("construct FP size: %d", kp.size());
+        //System.out.printf("construct FP size: %d, %s\n", kp.size(),des.size().toString());
         return new ImageFeature(tKP, des, IF1.getDescriptorType());
     }
 
