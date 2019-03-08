@@ -59,24 +59,25 @@ public class Main {
 //            }
 //            ratios.stream().forEach(f->System.out.printf("&\t%.2f\t",f/14f));
 //            System.out.println("\\\\\n\\hline");
-            List<Float> ratios = new ArrayList<Float>(Collections.nCopies(8, 0f));
-            for (int i=30; i <= 100; i+=10) {
-                if (i<=60)
-                elementWiseAdd(ratios,
-                testRobustFeature("src/main/resources/image/single_distortion/"+dir+"_scale/", i, dir+"_scale_up", false, new Distortion(DistortionType.ScaleUp,
-                        0.5f, 5, 100, 500), 500, 300, 20, 8)
-                );
-//
-                int k = 130-i;
-                if (k>=70)
-                elementWiseAdd(ratios,
-                testRobustFeature("src/main/resources/image/single_distortion/"+dir+"_scale/", k, dir+"_scale_down", false, new Distortion(DistortionType.ScaleDown,
-                        0.5f, 5, 100, 500), 500, 300, 20, 8)
-                );
-            }
-            System.out.print(dir + ":");
-            ratios.stream().forEach(f->System.out.printf("\t%.2f\t",f/14f));
-            System.out.println();
+
+//            List<Float> ratios = new ArrayList<Float>(Collections.nCopies(8, 0f));
+//            for (int i=30; i <= 100; i+=10) {
+//                if (i<=60)
+//                elementWiseAdd(ratios,
+//                testRobustFeature("src/main/resources/image/single_distortion/"+dir+"_scale/", i, dir+"_scale_up", false, new Distortion(DistortionType.ScaleUp,
+//                        0.5f, 5, 100, 500), 500, 300, 20, 8)
+//                );
+////
+//                int k = 130-i;
+//                if (k>=70)
+//                elementWiseAdd(ratios,
+//                testRobustFeature("src/main/resources/image/single_distortion/"+dir+"_scale/", k, dir+"_scale_down", false, new Distortion(DistortionType.ScaleDown,
+//                        0.5f, 5, 100, 500), 500, 300, 20, 8)
+//                );
+//            }
+//            System.out.print(dir + ":");
+//            ratios.stream().forEach(f->System.out.printf("\t%.2f\t",f/14f));
+//            System.out.println();
         }
 //        testRobustFeature("src/main/resources/image/single_distortion/furry_elephant/", 350, null, true, new Distortion(DistortionType.RightPers,
 //                5, 10, 100, 300), 500, 300, 20, 6);
@@ -86,12 +87,12 @@ public class Main {
 //                0.05f, 10, 100, 300), 500, 300, 20, 8);
 //        testRobustFeature("src/main/resources/image/single_distortion/shoe_scale/", 60, "ttt_log", true, new Distortion(DistortionType.ScaleUp,
 //                0.05f, 10, 100, 300), 500, 300, 20, 8);
-//        testCombinedDistortion("src/main/resources/image/multi_distortion/detergent/", "NP2_0.jpg", null, true,
-//                new Distortion[]{
-//                        new Distortion(DistortionType.RightPers, 5f, 10, fpnum*2, 300),
-//                        new Distortion(DistortionType.TopPers, 5f, 10, fpnum*2, 300)
-//                },
-//                500, 300, 20, 8);
+        testCombinedDistortion("src/main/resources/image/multi_distortion/detergent/", "18_0.jpg", null, true,
+                new Distortion[]{
+                        new Distortion(DistortionType.RightPers, 5f, 10, fpnum*2, 300),
+                        new Distortion(DistortionType.TopPers, 5f, 10, fpnum*2, 300)
+                },
+                500, 300, 20, 8);
 //        testRobustFeature("src/main/resources/image/single_distortion/detergent/", 1, "ttt_log", true,
 //                new Distortion(DistortionType.TopPers, 5f, 10, 100, 300), 500, 300, 20, 3);
     }
@@ -548,13 +549,13 @@ public class Main {
         int vValue = new Integer(tFile.split("\\.")[0].split("_")[0].replace("NP",""));
 //        logPW.printf("-----%s-------\n", dir.getName());
         if (DEBUG>0)System.out.printf("-----%s-------\n", dir.getName());
-        for (int d=1; d <= 3; d++) {
+        for (int d=0; d <= 36; d+=18) {
 //            if (DEBUG>0)System.out.printf("\\hline\n%d\t",d*18);
             if (DEBUG>0)System.out.printf("******%d*******\n",d);
             for (int k = 1; k <= testNum; k++) {
                 ImageFeature tIF = constructTemplateFP(tIFs, k*kHStep, (d-vValue)* kVStep, fpnum);
                 int i = templateValue + testStep * k;
-                Mat qImg = ImageUtil.loadMatImage(filePath + "NP" + d + "_" + i + ".jpg");
+                Mat qImg = ImageUtil.loadMatImage(filePath + d + "_" + i + ".jpg");
                 //assume we use ORB feature points in default
                 ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
                 MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
@@ -742,7 +743,7 @@ public class Main {
                 //System.out.println("sth is wrong");
             }
         }
-        System.out.printf("after if1:%d, distKps:%d\n",kp1.size(),distKPs.size());
+        if (DEBUG>0)System.out.printf("after if1:%d, distKps:%d\n",kp1.size(),distKPs.size());
 
 
         for(int i=0;i<kp2.size();i++){
@@ -756,7 +757,7 @@ public class Main {
                 //System.out.println("sth is wrong");
             }
         }
-        System.out.printf("after if2:%d, distKps:%d\n",kp2.size(),distKPs.size());
+        if (DEBUG>0)System.out.printf("after if2:%d, distKps:%d\n",kp2.size(),distKPs.size());
 
 
         int c1=0,c2=0;//couting # of selected fps from if1 and if2
@@ -798,7 +799,7 @@ public class Main {
             //System.out.println(des.size().toString());
             //System.out.printf("d1:%.02f, d2:%.02f, p1:%d,p2:%d,kp:%d\n",deficit1,deficit2,p1,p2,kp.size());
         }
-        System.out.printf("hr:%.02f,c1:%d,c2:%d\n",hr,c1,c2);
+        if (DEBUG>0)System.out.printf("hr:%.02f,c1:%d,c2:%d\n",hr,c1,c2);
         /*for (int i=0; i < kp2.size(); i++) {
             KeyPoint k = kp2.get(i);
             boolean newFP = true;
@@ -894,7 +895,7 @@ public class Main {
                     Mat display = new Mat();
                     Features2d.drawMatches(testImg, testF.getObjectKeypoints(), img, templateF.getObjectKeypoints(), matches, display);
                     ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
-//                }
+                }
             }
         }
     }

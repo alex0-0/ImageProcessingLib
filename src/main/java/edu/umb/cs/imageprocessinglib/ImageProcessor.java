@@ -275,7 +275,7 @@ public class ImageProcessor {
                     recorder.put(match.trainIdx, new ArrayList<>());
                 }
                 recorder.get(match.trainIdx).add(match);
-//                        mL.add(match);
+//                mL.add(match);
             }
         }
         //if multiple query points are matched to the same template point, keep the match with minimum distance
