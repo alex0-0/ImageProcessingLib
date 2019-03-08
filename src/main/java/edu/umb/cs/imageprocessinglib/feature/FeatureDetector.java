@@ -290,7 +290,7 @@ print out matching results
      * @param input for each target, this argument uses a list containing all qualified candidates
      * @param num   number of returned candidates
      * @param minTracker   track the Min value when keep the corresponding candidate in returned list, can be null
-     * @return an integer indicating the minimum counter value and a list containing most promising candidates
+     * @return a list containing most promising candidates
      */
 //    static Pair<Integer, List<Integer>> minMax(List<List<Integer>> input, int num) {
     List<Integer> maxMin(List<List<Integer>> input, int num, List<Integer> minTracker) {

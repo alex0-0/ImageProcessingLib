@@ -14,15 +14,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Main {
-    static int DEBUG = 1;
+    static int DEBUG = 0;
 
     static int fpnum=50;
 
@@ -42,16 +39,45 @@ public class Main {
 //        testTFRobustFeature();
 //        testDistortion();
 
-//        String[] dirNames = {"lego_man", "shoe", "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup"};
-//        for (String dir : dirNames) {
+        String[] dirNames = {"lego_man", "shoe", "furry_elephant", "toy_bear", "van_gogh", "furry_bear", "duck_cup", "furry_dog", "baby_cream", "girl_statue"};
+//        String[] dirNames = {"furry_koala"};
+        for (String dir : dirNames) {
+//            List<Float> ratios = new ArrayList<Float>(Collections.nCopies(11, 0f));
+//            System.out.printf("%s   ",dir);
+//
 //            for (int i=0; i <= 60; i+=10) {
+//                elementWiseAdd(ratios,
 //                testRobustFeature("src/main/resources/image/single_distortion/"+dir+"/", i, dir+"_left_robust_fp_test", false, new Distortion(DistortionType.LeftPers,
 //                        5, 10, 100, 300), 500, 300, 20, 8);
+//                );
+//
 //                int k = 350-i;
+//                elementWiseAdd(ratios,
 //                testRobustFeature("src/main/resources/image/single_distortion/"+dir+"/", k, dir+"_right_robust_fp_test", false, new Distortion(DistortionType.RightPers,
 //                        5, 10, 100, 300), 500, 300, 20, 8);
+//                );
 //            }
-//        }
+//            ratios.stream().forEach(f->System.out.printf("&\t%.2f\t",f/14f));
+//            System.out.println("\\\\\n\\hline");
+            List<Float> ratios = new ArrayList<Float>(Collections.nCopies(8, 0f));
+            for (int i=30; i <= 100; i+=10) {
+                if (i<=60)
+                elementWiseAdd(ratios,
+                testRobustFeature("src/main/resources/image/single_distortion/"+dir+"_scale/", i, dir+"_scale_up", false, new Distortion(DistortionType.ScaleUp,
+                        0.5f, 5, 100, 500), 500, 300, 20, 8)
+                );
+//
+                int k = 130-i;
+                if (k>=70)
+                elementWiseAdd(ratios,
+                testRobustFeature("src/main/resources/image/single_distortion/"+dir+"_scale/", k, dir+"_scale_down", false, new Distortion(DistortionType.ScaleDown,
+                        0.5f, 5, 100, 500), 500, 300, 20, 8)
+                );
+            }
+            System.out.print(dir + ":");
+            ratios.stream().forEach(f->System.out.printf("\t%.2f\t",f/14f));
+            System.out.println();
+        }
 //        testRobustFeature("src/main/resources/image/single_distortion/furry_elephant/", 350, null, true, new Distortion(DistortionType.RightPers,
 //                5, 10, 100, 300), 500, 300, 20, 6);
 //        testRobustFeature("src/main/resources/image/single_distortion/furry_bear/", 50, "ttt_log", true, new Distortion(DistortionType.LeftPers,
@@ -60,14 +86,20 @@ public class Main {
 //                0.05f, 10, 100, 300), 500, 300, 20, 8);
 //        testRobustFeature("src/main/resources/image/single_distortion/shoe_scale/", 60, "ttt_log", true, new Distortion(DistortionType.ScaleUp,
 //                0.05f, 10, 100, 300), 500, 300, 20, 8);
-        testCombinedDistortion("src/main/resources/image/multi_distortion/detergent/", "NP2_0.jpg", null, true,
-                new Distortion[]{
-                        new Distortion(DistortionType.RightPers, 5f, 10, fpnum*2, 300),
-                        new Distortion(DistortionType.TopPers, 5f, 10, fpnum*2, 300)
-                },
-                500, 300, 20, 8);
+//        testCombinedDistortion("src/main/resources/image/multi_distortion/detergent/", "NP2_0.jpg", null, true,
+//                new Distortion[]{
+//                        new Distortion(DistortionType.RightPers, 5f, 10, fpnum*2, 300),
+//                        new Distortion(DistortionType.TopPers, 5f, 10, fpnum*2, 300)
+//                },
+//                500, 300, 20, 8);
 //        testRobustFeature("src/main/resources/image/single_distortion/detergent/", 1, "ttt_log", true,
 //                new Distortion(DistortionType.TopPers, 5f, 10, 100, 300), 500, 300, 20, 3);
+    }
+
+    static void elementWiseAdd(List<Float> a, List<Float> b) {
+        for (int i=0; i < a.size(); i++) {
+            a.set(i, a.get(i)+b.get(i));
+        }
     }
 
     private static void testDistortion() throws IOException {
@@ -271,15 +303,15 @@ public class Main {
      * @throws IOException
      * TODO: need to think about what if templateAngle is required to be a float value
      */
-    static void testRobustFeature(String filePath,
-                                  int templateValue,
-                                  String logName,
-                                  boolean rewriteHP,
-                                  Distortion distortion,
-                                  int qFPNum,
-                                  int matchDisThd,
-                                  int matchPosThd,
-                                  int testNum
+    static List<Float> testRobustFeature(String filePath,
+                                         int templateValue,
+                                         String logName,
+                                         boolean rewriteHP,
+                                         Distortion distortion,
+                                         int qFPNum,
+                                         int matchDisThd,
+                                         int matchPosThd,
+                                         int testNum
                                   ) throws IOException {
         String hyperParams = "*********hyperparameters**********\n" +
                 "ratioTest: knnRatioThreshold 0.7; " +
@@ -337,9 +369,9 @@ public class Main {
                 break;
         }
 
-        for (Mat img : distortedImg) {
-            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(img));
-        }
+//        for (Mat img : distortedImg) {
+//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(img));
+//        }
 
         File dir = new File(filePath);
         //prepare for writing to log file
@@ -351,12 +383,14 @@ public class Main {
         boolean append = logFile.exists();
         logFile.createNewFile();
         PrintWriter pw = new PrintWriter(new FileOutputStream(logFile, true));
+//        PrintWriter logPW = new PrintWriter(new FileOutputStream("score_log", true));
         List<String> fNames = new ArrayList<>();
         List<Float> pres = new ArrayList<>();
 
         ImageFeature tIF = ImageProcessor.extractRobustFeatures(tImg, distortedImg, tFPNum, robustDisThd, DescriptorType.ORB, null);
 
-        System.out.printf("-----%s-------\n", dir.getName());
+//        logPW.printf("-----%s-------\n", dir.getName());
+        if (DEBUG>0)System.out.printf("-----%s-------\n", dir.getName());
         for (int k=1; k <= testNum; k++) {
             int i = templateValue + testStep * k;
             Mat qImg = ImageUtil.loadMatImage(filePath+i+".png");
@@ -364,16 +398,28 @@ public class Main {
             ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
             MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
             float p = (float)matches.total() / tIF.getSize();
-            System.out.printf("%d: %f\n", i, p);
+            if (DEBUG>0)System.out.printf("%d: %f\n", i, p);
+//            logPW.printf("%.2f\n", p);
 //            pw.printf("%d: %f\n", i, (float)matches.total() / tIF.getSize());
             fNames.add(""+testStep*k);
             pres.add(p);
             //display matches
-            Mat display = new Mat();
-            Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
-            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+//            Mat display = new Mat();
+//            Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
+//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
         }
 
+//        logPW.printf("-----false images-------\n");
+//        File fDir = new File("src/main/resources/image/false/");
+//        File[] files = fDir.listFiles((d, name) -> !name.equals(".DS_Store"));  //exclude mac hidden system file
+//        for (File f : files) {
+//            Mat qImg = ImageUtil.loadMatImage(f.getAbsolutePath());
+//            //assume we use ORB feature points in default
+//            ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
+//            MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
+//            float p = (float)matches.total() / tIF.getSize();
+//            logPW.printf("%.2f\n", p);
+//        }
         //assume all false image are named as "f"+number+".png"
         for (int i=1; i<=Integer.MAX_VALUE ;i++) {
             File fImg = new File(filePath + "f" + i + ".png");
@@ -383,14 +429,14 @@ public class Main {
             ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
             MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
             float p = (float)matches.total() / tIF.getSize();
-            System.out.printf("f%d: %f\n", i, p);
+            if (DEBUG>0)System.out.printf("f%d: %f\n", i, p);
 //            pw.printf("f%d: %f\n", i, (float)matches.total() / tIF.getSize());
             fNames.add("f"+i);
             pres.add(p);
             //display matches
-            Mat display = new Mat();
-            Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
-            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+//            Mat display = new Mat();
+//            Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(),  matches, display);
+//            ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
         }
         if (!append || rewriteHP) {
             pw.println(hyperParams);
@@ -408,6 +454,8 @@ public class Main {
             pw.printf("%.2f\t",p);
         pw.println();   //next line
         pw.close();
+//        logPW.close();
+        return pres;
     }
 
     static int kVStep = 18;
@@ -491,15 +539,18 @@ public class Main {
         File logFile = new File(logName);
         boolean append = logFile.exists();
         logFile.createNewFile();
+//        PrintWriter logPW = new PrintWriter(new FileOutputStream("score_log", true));
         PrintWriter pw = new PrintWriter(new FileOutputStream(logFile, true));
         List<String> fNames = new ArrayList<>();
         List<Float> pres = new ArrayList<>();
 
         int templateValue = new Integer(tFile.split("\\.")[0].split("_")[1]);
         int vValue = new Integer(tFile.split("\\.")[0].split("_")[0].replace("NP",""));
-        System.out.printf("-----%s-------\n", dir.getName());
+//        logPW.printf("-----%s-------\n", dir.getName());
+        if (DEBUG>0)System.out.printf("-----%s-------\n", dir.getName());
         for (int d=1; d <= 3; d++) {
-            System.out.printf("******%d*******\n",d);
+//            if (DEBUG>0)System.out.printf("\\hline\n%d\t",d*18);
+            if (DEBUG>0)System.out.printf("******%d*******\n",d);
             for (int k = 1; k <= testNum; k++) {
                 ImageFeature tIF = constructTemplateFP(tIFs, k*kHStep, (d-vValue)* kVStep, fpnum);
                 int i = templateValue + testStep * k;
@@ -508,7 +559,9 @@ public class Main {
                 ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
                 MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
                 float p = (float) matches.total() / tIF.getSize();
-                System.out.printf("%d: %f\n", i, p);
+//                logPW.printf("%.2f\n", p);
+//                if (DEBUG>0)System.out.printf("&\t%.2f\t", p);
+                if (DEBUG>0)System.out.printf("%d: %f\n", i, p);
 //            pw.printf("%d: %f\n", i, (float)matches.total() / tIF.getSize());
                 fNames.add("" + d + "_" + testStep * k);
                 pres.add(p);
@@ -518,26 +571,38 @@ public class Main {
 //                    ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
             }
         }
-        System.out.printf("******false*******\n");
-        //assume all false image are named as "f"+number+".png"
-        for (int i = 1; i <= Integer.MAX_VALUE; i++) {
-            File fImg = new File(filePath + "f" + i + ".png");
-            if (!fImg.exists()) break;
+//        logPW.printf("-----false images-------\n");
+        File fDir = new File("src/main/resources/image/false/");
+        File[] files = fDir.listFiles((d, name) -> !name.equals(".DS_Store"));  //exclude mac hidden system file
+        for (File f : files) {
             ImageFeature tIF = tIFs.get(0);
-            Mat qImg = ImageUtil.loadMatImage(fImg.getAbsolutePath());
+            Mat qImg = ImageUtil.loadMatImage(f.getAbsolutePath());
             //assume we use ORB feature points in default
             ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
             MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
-            float p = (float) matches.total() / tIF.getSize();
-            System.out.printf("f%d: %f\n", i, p);
-//            pw.printf("f%d: %f\n", i, (float)matches.total() / tIF.getSize());
-            fNames.add("f" + i);
-            pres.add(p);
-//                //display matches
-//                Mat display = new Mat();
-//                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), matches, display);
-//                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+            float p = (float)matches.total() / tIF.getSize();
+//            logPW.printf("%.2f\n", p);
         }
+//        if (DEBUG>0)System.out.printf("******false*******\n");
+//        assume all false image are named as "f"+number+".png"
+//        for (int i = 1; i <= Integer.MAX_VALUE; i++) {
+//            File fImg = new File(filePath + "f" + i + ".png");
+//            if (!fImg.exists()) break;
+//            ImageFeature tIF = tIFs.get(0);
+//            Mat qImg = ImageUtil.loadMatImage(fImg.getAbsolutePath());
+//            //assume we use ORB feature points in default
+//            ImageFeature qIF = ImageProcessor.extractORBFeatures(qImg, qFPNum);
+//            MatOfDMatch matches = ImageProcessor.matchWithRegression(qIF, tIF, 5, matchDisThd, matchPosThd);
+//            float p = (float) matches.total() / tIF.getSize();
+//            if (DEBUG>0)System.out.printf("f%d: %f\n", i, p);
+////            pw.printf("f%d: %f\n", i, (float)matches.total() / tIF.getSize());
+//            fNames.add("f" + i);
+//            pres.add(p);
+////                //display matches
+////                Mat display = new Mat();
+////                Features2d.drawMatches(qImg, qIF.getObjectKeypoints(), tImg, tIF.getObjectKeypoints(), matches, display);
+////                ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(display));
+//        }
         if (!append || rewriteHP) {
             pw.println(hyperParams);
             pw.printf("distortions: %s, qFPNum: %d, matchDisThd: %d, matchPosThd: %d\n",
@@ -560,6 +625,7 @@ public class Main {
         }
         pw.println();   //next line
         pw.close();
+//        logPW.close();
     }
 
 
@@ -657,7 +723,7 @@ public class Main {
         List<KeyPoint> kp1 = IF1.getObjectKeypoints().toList();
         List<KeyPoint> kp2 = IF2.getObjectKeypoints().toList();
 
-        List<KPoint> distKPs=new ArrayList<>();
+        List<KPoint> distKPs=new ArrayList<>(); //distinct key points
         for(int i=0;i<kp1.size();i++){
             KeyPoint k1= kp1.get(i);
             KPoint tkp=new KPoint(k1.pt.x, k1.pt.y);
