@@ -87,7 +87,7 @@ public class Main {
 //                0.05f, 10, 100, 300), 500, 300, 20, 8);
 //        testRobustFeature("src/main/resources/image/single_distortion/shoe_scale/", 60, "ttt_log", true, new Distortion(DistortionType.ScaleUp,
 //                0.05f, 10, 100, 300), 500, 300, 20, 8);
-        testCombinedDistortion("src/main/resources/image/multi_distortion/detergent/", "18_0.jpg", null, true,
+        testCombinedDistortion("src/main/resources/image/multi_distortion/detergent/", "22_0.jpg", null, true,
                 new Distortion[]{
                         new Distortion(DistortionType.RightPers, 5f, 10, fpnum*2, 300),
                         new Distortion(DistortionType.TopPers, 5f, 10, fpnum*2, 300)
@@ -459,7 +459,7 @@ public class Main {
         return pres;
     }
 
-    static int kVStep = 18;
+    static int kVStep = 22;
     static int kHStep = 3;
     static void testCombinedDistortion(String filePath,
                                        String tFile,
@@ -549,7 +549,7 @@ public class Main {
         int vValue = new Integer(tFile.split("\\.")[0].split("_")[0].replace("NP",""));
 //        logPW.printf("-----%s-------\n", dir.getName());
         if (DEBUG>0)System.out.printf("-----%s-------\n", dir.getName());
-        for (int d=0; d <= 36; d+=18) {
+        for (int d=0; d <= 44; d+=kVStep) {
 //            if (DEBUG>0)System.out.printf("\\hline\n%d\t",d*18);
             if (DEBUG>0)System.out.printf("******%d*******\n",d);
             for (int k = 1; k <= testNum; k++) {
