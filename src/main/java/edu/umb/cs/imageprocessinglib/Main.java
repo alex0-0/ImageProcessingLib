@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Main {
-    static int DEBUG = 2;
+    static int DEBUG = 0;
 
     static int fpnum=100;
 
@@ -87,12 +87,37 @@ public class Main {
 //                0.05f, 10, 100, 300), 500, 300, 20, 8);
 //        testRobustFeature("src/main/resources/image/single_distortion/shoe_scale/", 60, "ttt_log", true, new Distortion(DistortionType.ScaleUp,
 //                0.05f, 10, 100, 300), 500, 300, 20, 8);
-        testCombinedDistortion("src/main/resources/image/multi_distortion/detergent/", "22_0.jpg", null, true,
-                new Distortion[]{
-                        new Distortion(DistortionType.RightPers, 5f, 10, (int)(fpnum*1.2), 400),
-                        new Distortion(DistortionType.TopPers, 5f, 10, (int)(fpnum*1.2), 400)
-                },
-                500, 300, 20, 8);
+        String[] mdirs = {"coffee_mate", "quaker"};
+//        String[] mdirs = {"detergent", "coffee_mate", "quaker"};
+        for (String dir : mdirs) {
+            for (int i=0; i<=140;i+=3) {
+                testCombinedDistortion("src/main/resources/image/multi_distortion/"+dir+"/", "22_"+i+".jpg", "rt_"+dir, false,
+                        new Distortion[]{
+                                new Distortion(DistortionType.RightPers, 5f, 10, (int)(fpnum*1.2), 400),
+                                new Distortion(DistortionType.TopPers, 5f, 10, (int)(fpnum*1.2), 400)
+                        },
+                        500, 300, 20, 8);
+                testCombinedDistortion("src/main/resources/image/multi_distortion/"+dir+"/", "22_"+i+".jpg", "rb_"+dir, false,
+                        new Distortion[]{
+                                new Distortion(DistortionType.RightPers, 5f, 10, (int)(fpnum*1.2), 400),
+                                new Distortion(DistortionType.BottomPers, 5f, 10, (int)(fpnum*1.2), 400)
+                        },
+                        500, 300, 20, 8);
+                int k=180-i;
+                testCombinedDistortion("src/main/resources/image/multi_distortion/"+dir+"/", "22_"+k+".jpg", "lt_"+dir, false,
+                        new Distortion[]{
+                                new Distortion(DistortionType.LeftPers, 5f, 10, (int)(fpnum*1.2), 400),
+                                new Distortion(DistortionType.TopPers, 5f, 10, (int)(fpnum*1.2), 400)
+                        },
+                        500, 300, 20, 8);
+                testCombinedDistortion("src/main/resources/image/multi_distortion/"+dir+"/", "22_"+k+".jpg", "lb_"+dir, false,
+                        new Distortion[]{
+                                new Distortion(DistortionType.LeftPers, 5f, 10, (int)(fpnum*1.2), 400),
+                                new Distortion(DistortionType.BottomPers, 5f, 10, (int)(fpnum*1.2), 400)
+                        },
+                        500, 300, 20, 8);
+            }
+        }
 //        testRobustFeature("src/main/resources/image/single_distortion/detergent/", 1, "ttt_log", true,
 //                new Distortion(DistortionType.TopPers, 5f, 10, 100, 300), 500, 300, 20, 3);
     }
@@ -553,7 +578,7 @@ public class Main {
 //            if (DEBUG>0)System.out.printf("\\hline\n%d\t",d*18);
             if (DEBUG>0)System.out.printf("******%d*******\n",d);
             for (int k = 1; k <= testNum; k++) {
-                ImageFeature tIF = constructTemplateFP(tIFs, new float[]{2,1},fpnum);//(float)k*kHStep, (float)(d-vValue)* kVStep}, fpnum);
+                ImageFeature tIF = constructTemplateFP(tIFs, new float[]{(float)k*kHStep, Math.abs((float)(d-vValue)* kVStep)}, fpnum);
                 int i = templateValue + testStep * k;
                 Mat qImg = ImageUtil.loadMatImage(filePath + d + "_" + i + ".jpg");
                 //assume we use ORB feature points in default
@@ -731,6 +756,7 @@ public class Main {
         int[] c_list=new int[kp_list.size()];
         int[] p_list=new int[kp_list.size()];
         int sum_c=0;
+        //TODO: what if tNum always > kp.size?
         while( kp.size()<tNum){
             KeyPoint k;
             float max_deficit=0;
@@ -740,7 +766,8 @@ public class Main {
                 //System.out.printf("%d:%.02f,%.02f\n",i,weights[i],(float)c_list[i]/n_sum);
 
                 float deficit=weights[i]-(float)c_list[i]/n_sum;
-                if(deficit>max_deficit){
+                //add the feature points of list with largest deficit when it still has candidates
+                if(deficit>max_deficit && kp_list.get(i).size() > p_list[i]) {
                     max_deficit=deficit;
                     candidate_idx=i;
                 }
