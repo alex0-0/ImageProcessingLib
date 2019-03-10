@@ -65,14 +65,14 @@ public class Main {
 //                if (i<=60)
 //                elementWiseAdd(ratios,
 //                testRobustFeature("src/main/resources/image/single_distortion/"+dir+"_scale/", i, dir+"_scale_up", false, new Distortion(DistortionType.ScaleUp,
-//                        0.5f, 5, 100, 500), 500, 300, 20, 8)
+//                        0.05f, 5, 100, 500), 500, 300, 20, 8)
 //                );
 ////
 //                int k = 130-i;
 //                if (k>=70)
 //                elementWiseAdd(ratios,
 //                testRobustFeature("src/main/resources/image/single_distortion/"+dir+"_scale/", k, dir+"_scale_down", false, new Distortion(DistortionType.ScaleDown,
-//                        0.5f, 5, 100, 500), 500, 300, 20, 8)
+//                        -0.05f, 5, 100, 500), 500, 300, 20, 8)
 //                );
 //            }
 //            System.out.print(dir + ":");
@@ -710,7 +710,7 @@ public class Main {
         }
 
     }
-    //assume tIFs contains only horizontal robust and vertical robust ImageFeature, at total 2.
+
     static ImageFeature constructTemplateFP(List<ImageFeature> tIFs, float[] weights, int tNum) {
         //calculate ratios
         //float hr = Math.abs(hd)/(Math.abs(hd) + Math.abs(vd));
@@ -756,11 +756,10 @@ public class Main {
         int[] c_list=new int[kp_list.size()];
         int[] p_list=new int[kp_list.size()];
         int sum_c=0;
-        //TODO: what if tNum always > kp.size?
         while( kp.size()<tNum){
             KeyPoint k;
             float max_deficit=0;
-            int candidate_idx=0;
+            int candidate_idx=-1;
             for(int i=0;i<c_list.length;i++){
                 int n_sum= (sum_c==0)? tNum : sum_c;
                 //System.out.printf("%d:%.02f,%.02f\n",i,weights[i],(float)c_list[i]/n_sum);
@@ -772,6 +771,7 @@ public class Main {
                     candidate_idx=i;
                 }
             }
+            if (candidate_idx == -1) break; //no candidates
             k=kp_list.get(candidate_idx).get(p_list[candidate_idx]++);
 
             KPoint kkp=new KPoint(k.pt.x,k.pt.y);
