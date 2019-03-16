@@ -762,7 +762,7 @@ public class Main {
         int sum_c=0;
         while( kp.size()<tNum){
             KeyPoint k;
-            float max_deficit=0;
+            float max_deficit=-1;
             int candidate_idx=-1;
             for(int i=0;i<c_list.length;i++){
                 int n_sum= (sum_c==0)? tNum : sum_c;

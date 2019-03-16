@@ -173,10 +173,10 @@ public class FeatureMatcher {
         //use templateDescriptor as query to make sure the match won't exceed the number of template key points
         //Besides, logically speaking, we actually are querying if the template image is found in the query image
         m.knnMatch(templateDescriptor, queryDescriptor, matches1, knnNum);
-        m.knnMatch(queryDescriptor, templateDescriptor, matches2, 2);      //matches will is used later
+        m.knnMatch(queryDescriptor, templateDescriptor, matches2, 2);      //matches will be used later
 
-        ratioTest(matches1);
-        ratioTest(matches2);
+//        ratioTest(matches1);
+//        ratioTest(matches2);
 
         MatOfDMatch symMatches = symmetryTest(matches1, matches2);
 //        MatOfDMatch symMatches = new MatOfDMatch();//symmetryTest(matches1, matches2);
