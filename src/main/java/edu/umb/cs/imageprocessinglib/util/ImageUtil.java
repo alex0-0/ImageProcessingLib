@@ -18,6 +18,7 @@ import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 
 /**
@@ -119,7 +120,8 @@ public class ImageUtil {
 
     public static byte[] extractBytes (final String filePath, Class c) {
         try {
-            return IOUtils.toByteArray(c.getResourceAsStream(filePath));
+            File f = new File(filePath);
+            return Files.readAllBytes(f.toPath());
         } catch (IOException | NullPointerException ex) {
             ex.printStackTrace();
             throw new RuntimeException();

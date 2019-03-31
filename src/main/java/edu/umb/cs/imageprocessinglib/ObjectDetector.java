@@ -21,7 +21,7 @@ public class ObjectDetector {
         TF_OD_API, YOLO;
     }
 
-    private static final String YOLO_MODEL_FILE = "/YOLO/tiny-yolo-voc.pb";
+    private static final String YOLO_MODEL_FILE = "src/main/resources/YOLO/tiny-yolo-voc.pb";
     private static final int YOLO_INPUT_SIZE = 416;
     private static final String YOLO_INPUT_NAME = "input";
     private static final String YOLO_OUTPUT_NAMES = "output";
@@ -77,10 +77,10 @@ public class ObjectDetector {
                 filter(r -> r.getConfidence() >= minConfidence).
                 map(r -> {
                     //just for test, don't wanna generate too many test files
-                    r.setUuid(Integer.toString(i.incrementAndGet()));
+//                    r.setUuid(Integer.toString(i.incrementAndGet()));
 
-                    r.savePixels(ImageUtil.BufferedImage2Mat(image), cropSize);
-                    r.saveFeature(ImageUtil.BufferedImage2Mat(image), cropSize);
+//                    r.savePixels(ImageUtil.BufferedImage2Mat(image), cropSize);
+//                    r.saveFeature(ImageUtil.BufferedImage2Mat(image), cropSize);
 //                    ImageUtil.displayImage(r.getPixels());
                     return r;
                 }).collect(Collectors.toList());
