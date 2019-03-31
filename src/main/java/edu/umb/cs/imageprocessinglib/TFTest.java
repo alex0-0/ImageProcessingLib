@@ -7,6 +7,7 @@ import org.opencv.core.Core;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class TFTest {
@@ -36,6 +37,47 @@ public class TFTest {
             ImageUtil.displayImage(t);
         }
 
+        List<BufferedImage> images = divideImage(img, 3, 3);
+        for (BufferedImage i : images) {
+            List<Recognition> rs = objectDetector.recognizeImage(img);
+
+            for (Recognition r : rs) {
+                System.out.printf("Object: %s - confidence: %f box: %s\n",
+                        r.getTitle(), r.getConfidence(), r.getLocation());
+                BoxPosition bp = r.getScaledLocation((float)img.getWidth()/r.getModelSize(), (float)img.getHeight()/r.getModelSize());
+                BufferedImage t = img.getSubimage(bp.getLeftInt(), bp.getTopInt(), bp.getWidthInt(), bp.getHeightInt());
+                ImageUtil.displayImage(t);
+            }
+
+        }
+
+    }
+
+    /**
+     *
+     * @param img   image
+     * @param hn    horizontal division number
+     * @param vn    vertical division number
+     * @return
+     */
+    static List<BufferedImage> divideImage(BufferedImage img, int hn, int vn) {
+        List<BufferedImage> imgs = new ArrayList();
+        int w = img.getWidth()/hn;
+        int h = img.getHeight()/vn;
+        for (int i=0; i < hn; i++) {
+            for (int d = 0; d < vn; d++) {
+                BufferedImage t = img.getSubimage(i * w, d * h, w, h);
+                imgs.add(t);
+            }
+        }
+        for (int i=0; i < hn-1; i++) {
+            for (int d = 0; d < vn-1; d++) {
+                BufferedImage t = img.getSubimage(i * w + w/2, d * h + h/2, w, h);
+                imgs.add(t);
+            }
+        }
+
+        return imgs;
     }
 
 }
