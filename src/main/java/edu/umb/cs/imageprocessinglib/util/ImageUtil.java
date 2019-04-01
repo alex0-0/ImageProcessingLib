@@ -201,7 +201,17 @@ public class ImageUtil {
         Size size = image.size();
         Point center = new Point(size.width/2, size.height/2);
         Mat matrix = Imgproc.getRotationMatrix2D(center, angle, 1);
-        Imgproc.warpAffine(image, rotatedImg, matrix, size);
+
+        Rect box = new RotatedRect(center, image.size(), angle).boundingRect();
+        // adjust transformation matrix
+        double[] cx = matrix.get(0, 2);
+        double[] cy = matrix.get(1, 2);
+        cx[0] += box.width / 2D - center.x;
+        cy[0] += box.height / 2D - center.y;
+        matrix.put(0, 2, cx);
+        matrix.put(1, 2, cy);
+
+        Imgproc.warpAffine(image, rotatedImg, matrix, box.size());
         matrix.release();
         return rotatedImg;
     }
