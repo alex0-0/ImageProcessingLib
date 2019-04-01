@@ -108,6 +108,19 @@ public class ImageUtil {
         return imageCodecs.imread(file);
     }
 
+    public static BufferedImage deepCopyBufferedImage(BufferedImage i) {
+        BufferedImage deepCopy = new BufferedImage(i.getWidth(), i.getHeight(), i.getType());
+        // Draw the subimage onto the new, empty copy
+        Graphics2D g = deepCopy.createGraphics();
+        try {
+            g.drawImage(i, 0, 0, null);
+        }
+        finally {
+            g.dispose();
+        }
+        return deepCopy;
+    }
+
     public static BufferedImage createImageFromBytes(final byte[] imageData) {
         ByteArrayInputStream bais = new ByteArrayInputStream(imageData);
         try {
