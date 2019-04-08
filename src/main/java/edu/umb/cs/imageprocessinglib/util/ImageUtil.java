@@ -141,10 +141,16 @@ public class ImageUtil {
         }
     }
 
+    public static BufferedImage RGBAMat2BufferedImage(Mat m) {
+        Mat bgr = new Mat();
+        Imgproc.cvtColor(m, bgr, Imgproc.COLOR_RGBA2RGB);
+        return Mat2BufferedImage(bgr);
+    }
+
     public static BufferedImage Mat2BufferedImage(Mat m) {
         int type = BufferedImage.TYPE_BYTE_GRAY;
         if ( m.channels() > 1 ) {
-            type = BufferedImage.TYPE_3BYTE_BGR;
+            type = BufferedImage.TYPE_3BYTE_BGR;    //Mat RBG position is different from BufferedImage
         }
         int bufferSize = m.channels()*m.cols()*m.rows();
         byte [] b = new byte[bufferSize];
