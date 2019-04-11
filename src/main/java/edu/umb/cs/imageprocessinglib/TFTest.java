@@ -45,9 +45,9 @@ public class TFTest {
             for (int j=0; j<img.width(); j++) {
                 double[] p1 = img.get(i,j);
                 double[] p2 = img.get(i+1,j);
+                top = i;
                 for (int k=0; k<p1.length; k++) {
                     if (Math.abs(p1[k]-p2[k]) > thdValue) {
-                        top = i;
                         flag = true;
                         break;
                     }
@@ -63,9 +63,9 @@ public class TFTest {
             for (int i=0; i<img.height(); i++) {
                 double[] p1 = img.get(i,j);
                 double[] p2 = img.get(i,j+1);
+                left = j;
                 for (int k=0; k<p1.length; k++) {
                     if (Math.abs(p1[k]-p2[k]) > thdValue) {
-                        left = j;
                         flag = true;
                         break;
                     }
@@ -81,9 +81,9 @@ public class TFTest {
             for (int j=0; j<img.width(); j++) {
                 double[] p1 = img.get(i,j);
                 double[] p2 = img.get(i-1,j);
+                bottom = i;
                 for (int k=0; k<p1.length; k++) {
                     if (Math.abs(p1[k]-p2[k]) > thdValue) {
-                        bottom = i;
                         flag = true;
                         break;
                     }
@@ -99,9 +99,9 @@ public class TFTest {
             for (int i=0; i<img.height(); i++) {
                 double[] p1 = img.get(i,j);
                 double[] p2 = img.get(i,j-1);
+                right = j;
                 for (int k=0; k<p1.length; k++) {
                     if (Math.abs(p1[k]-p2[k]) > thdValue) {
-                        right = j;
                         flag = true;
                         break;
                     }
