@@ -5,6 +5,7 @@ import edu.umb.cs.imageprocessinglib.model.Recognition;
 import edu.umb.cs.imageprocessinglib.util.ImageUtil;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.Rect;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
@@ -22,9 +23,97 @@ public class TFTest {
     public static void main(String[] args) throws Exception {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 //        sizeTest();
-        generateTestData(10);
+//        generateTestData(10);
+        Mat img = ImageUtil.loadMatImage("src/main/resources/image/single_distortion/girl_statue/0.png");
+        ImageUtil.displayImage(ImageUtil.Mat2BufferedImage(shrinkImage(img, 0.10f)));
     }
 
+    /**
+     *
+     * @param img   image Mat
+     * @param thd   the threshold for difference scale
+     * @return cropped Mat
+     */
+    static Mat shrinkImage(Mat img, float thd) {
+        int top=0, bottom=img.height(), left=0, right=img.width();
+        boolean flag = false;
+        int thdValue = (int)(256 * thd);
+
+        //get the top space
+        for (int i=0; i<img.height()-1; i++) {
+            if (flag) break;
+            for (int j=0; j<img.width(); j++) {
+                double[] p1 = img.get(i,j);
+                double[] p2 = img.get(i+1,j);
+                for (int k=0; k<p1.length; k++) {
+                    if (Math.abs(p1[k]-p2[k]) > thdValue) {
+                        top = i;
+                        flag = true;
+                        break;
+                    }
+                }
+                if (flag) break;
+            }
+        }
+
+        flag = false;
+        //get the left space
+        for (int j=0; j<img.width()-1; j++) {
+            if (flag) break;
+            for (int i=0; i<img.height(); i++) {
+                double[] p1 = img.get(i,j);
+                double[] p2 = img.get(i,j+1);
+                for (int k=0; k<p1.length; k++) {
+                    if (Math.abs(p1[k]-p2[k]) > thdValue) {
+                        left = j;
+                        flag = true;
+                        break;
+                    }
+                }
+                if (flag) break;
+            }
+        }
+
+        flag = false;
+        //get the bottom space
+        for (int i=img.height()-1; i > top; i--) {
+            if (flag) break;
+            for (int j=0; j<img.width(); j++) {
+                double[] p1 = img.get(i,j);
+                double[] p2 = img.get(i-1,j);
+                for (int k=0; k<p1.length; k++) {
+                    if (Math.abs(p1[k]-p2[k]) > thdValue) {
+                        bottom = i;
+                        flag = true;
+                        break;
+                    }
+                }
+                if (flag) break;
+            }
+        }
+
+        flag = false;
+        //get the right space
+        for (int j=img.width()-1; j > left; j--) {
+            if (flag) break;
+            for (int i=0; i<img.height(); i++) {
+                double[] p1 = img.get(i,j);
+                double[] p2 = img.get(i,j-1);
+                for (int k=0; k<p1.length; k++) {
+                    if (Math.abs(p1[k]-p2[k]) > thdValue) {
+                        right = j;
+                        flag = true;
+                        break;
+                    }
+                }
+                if (flag) break;
+            }
+        }
+
+        Rect rect = new Rect(left, top, right-left, bottom-top);
+        Mat ret = new Mat(img,rect);
+        return ret;
+    }
 
     static void generateTestData(int num) throws IOException {
         int ratioType = 5;  //five types of ratio for each row, i.e, 1:1:1, 2:1, 1:2, 2:3, 3:2
