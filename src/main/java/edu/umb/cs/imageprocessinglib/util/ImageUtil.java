@@ -302,4 +302,92 @@ public class ImageUtil {
 
         return affine;
     }
+
+    /**
+     *
+     * @param img   image Mat
+     * @param thd   the threshold for difference scale
+     * @return cropped Mat
+     */
+    public static Mat shrinkImage(Mat img, float thd) {
+        int top=0, bottom=img.height(), left=0, right=img.width();
+        boolean flag = false;
+        int thdValue = (int)(256 * thd);
+
+        //get the top space
+        for (int i=0; i<img.height()-1; i++) {
+            if (flag) break;
+            for (int j=0; j<img.width(); j++) {
+                double[] p1 = img.get(i,j);
+                double[] p2 = img.get(i+1,j);
+                top = i;
+                for (int k=0; k<p1.length; k++) {
+                    if (Math.abs(p1[k]-p2[k]) > thdValue) {
+                        flag = true;
+                        break;
+                    }
+                }
+                if (flag) break;
+            }
+        }
+
+        flag = false;
+        //get the left space
+        for (int j=0; j<img.width()-1; j++) {
+            if (flag) break;
+            for (int i=0; i<img.height(); i++) {
+                double[] p1 = img.get(i,j);
+                double[] p2 = img.get(i,j+1);
+                left = j;
+                for (int k=0; k<p1.length; k++) {
+                    if (Math.abs(p1[k]-p2[k]) > thdValue) {
+                        flag = true;
+                        break;
+                    }
+                }
+                if (flag) break;
+            }
+        }
+
+        flag = false;
+        //get the bottom space
+        for (int i=img.height()-1; i > top; i--) {
+            if (flag) break;
+            for (int j=0; j<img.width(); j++) {
+                double[] p1 = img.get(i,j);
+                double[] p2 = img.get(i-1,j);
+                bottom = i;
+                for (int k=0; k<p1.length; k++) {
+                    if (Math.abs(p1[k]-p2[k]) > thdValue) {
+                        flag = true;
+                        break;
+                    }
+                }
+                if (flag) break;
+            }
+        }
+
+        flag = false;
+        //get the right space
+        for (int j=img.width()-1; j > left; j--) {
+            if (flag) break;
+            for (int i=0; i<img.height(); i++) {
+                double[] p1 = img.get(i,j);
+                double[] p2 = img.get(i,j-1);
+                right = j;
+                for (int k=0; k<p1.length; k++) {
+                    if (Math.abs(p1[k]-p2[k]) > thdValue) {
+                        flag = true;
+                        break;
+                    }
+                }
+                if (flag) break;
+            }
+        }
+
+        Rect rect = new Rect(left, top, right-left, bottom-top);
+        Mat ret = new Mat(img,rect);
+        return ret;
+    }
+
 }
